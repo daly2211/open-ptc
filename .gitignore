@@ -1,0 +1,12 @@
+.env
+.env.*
+node_modules/
+cov_profile/
+.DS_Store
+*.log
+tmp/
+temp/
+.vscode/
+example-api-client.ts
+example-mcp-client.ts
+mcp_config.json

@@ -1,0 +1,25 @@
+{
+  "type": "module",
+  "imports": {
+    "@mcp/sdk": "npm:@modelcontextprotocol/sdk@^1.20.2",
+    "json-schema-to-typescript": "https://esm.sh/json-schema-to-typescript?target=esnext",
+    "@yieldray/json-rpc-ts": "jsr:@yieldray/json-rpc-ts@^0.2.2",
+    "json-rpc-2.0": "npm:json-rpc-2.0@1.7.0",
+    "ajv": "npm:ajv@^8.12.0",
+    "@std/http": "jsr:@std/http@^1.0.0",
+    "@std/dotenv": "jsr:@std/dotenv@^0.225.2",
+    "gentle_rpc": "https://deno.land/x/gentle_rpc@v3.3/mod.ts",
+    "mcp-lite": "npm:mcp-lite@^0.10.0",
+    "zod": "npm:zod@^3.22.4",
+    "zod-to-json-schema": "npm:zod-to-json-schema@^3.23.5"
+  },
+  "lint": {
+    "rules": {
+      "exclude": ["no-explicit-any"]
+    }
+  },
+  "tasks": {
+    "start": "run --allow-net --allow-write ./mod.ts",
+    "dev": "run --allow-net --allow-write --watch ./mod.ts"
+  }
+}

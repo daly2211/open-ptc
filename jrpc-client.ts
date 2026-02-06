@@ -19,6 +19,6 @@ export async function callTool(
 
   if (error) throw new Error(`JSON-RPC Error: ${error.message}`)
   if (!result.success) throw new TypeError(result.error || `Tool call failed for ${toolRef}`)
-
+  
   return result.data
 }

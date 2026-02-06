@@ -4,40 +4,32 @@ import {
   generateTsSignatureFromTool,
   generateFullTsFile 
 } from "./signature-generator.ts";
-import type {TransportConfig} from "./mcp-client.ts";
+import type { TransportConfig } from "./mcp-client.ts";
+import { cleanupVariableName, type BaseToolDefinition } from "./tool-types.ts";
 
+// Re-export cleanupVariableName for backward compatibility
+export { cleanupVariableName } from "./tool-types.ts";
 
 export interface McpServerConfig {
   name: string;
   transport: TransportConfig;
 }
 
-export interface ToolDefinition {
-  referenceName: string;
+/**
+ * MCP-specific tool definition extending the base tool definition
+ * with MCP transport and client metadata
+ */
+export interface McpToolDefinition extends BaseToolDefinition {
   serverName: string;
   cleanServerName: string;
-  toolName: string;
-  cleanToolName: string;
-  description?: string;
-  inputSchema: object;
-  outputSchema?: object | null;
-  guardFunction: (value: unknown) => boolean;
   transport: TransportConfig;
   mcpClient: McpClient;
 }
 
-export function cleanupVariableName(name: string): string {
-  return name
-    .trim()
-    .replace(/[^a-zA-Z0-9_]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_|_$/g, "");
-}
-
 export class McpRegistry {
-  private tools: ToolDefinition[] = [];
-  private toolsByRef = new Map<string, ToolDefinition>();
-  private toolsByServer = new Map<string, ToolDefinition[]>();
+  private tools: McpToolDefinition[] = [];
+  private toolsByRef = new Map<string, McpToolDefinition>();
+  private toolsByServer = new Map<string, McpToolDefinition[]>();
   private clients = new Set<McpClient>();
 
   private constructor() {}
@@ -73,7 +65,7 @@ export class McpRegistry {
           { type: "object", properties: {}, additionalProperties: true };
         const guardFunction = schemaToTypeGuard(inputSchema);
 
-        const toolDef: ToolDefinition = {
+        const mcpTool: McpToolDefinition = {
           referenceName,
           serverName,
           cleanServerName,
@@ -87,28 +79,28 @@ export class McpRegistry {
           mcpClient,
         };
 
-        this.tools.push(toolDef);
-        this.toolsByRef.set(referenceName, toolDef);
+        this.tools.push(mcpTool);
+        this.toolsByRef.set(referenceName, mcpTool);
 
         if (!this.toolsByServer.has(cleanServerName)) {
           this.toolsByServer.set(cleanServerName, []);
         }
-        this.toolsByServer.get(cleanServerName)!.push(toolDef);
+        this.toolsByServer.get(cleanServerName)!.push(mcpTool);
       }
     } catch (error) {
       console.error(`Failed to introspect server ${serverConfig.name}:`, error);
     }
   }
 
-  getAllTools(): ToolDefinition[] {
+  getAllTools(): McpToolDefinition[] {
     return [...this.tools];
   }
 
-  getTool(referenceName: string): ToolDefinition | undefined {
+  getTool(referenceName: string): McpToolDefinition | undefined {
     return this.toolsByRef.get(referenceName);
   }
 
-  getToolsByServer(serverName: string): ToolDefinition[] {
+  getToolsByServer(serverName: string): McpToolDefinition[] {
     return this.toolsByServer.get(serverName) || [];
   }
 
@@ -120,7 +112,7 @@ export class McpRegistry {
     return Array.from(this.toolsByServer.keys());
   }
 
-  groupToolsByServer(): Map<string, ToolDefinition[]> {
+  groupToolsByServer(): Map<string, McpToolDefinition[]> {
     return new Map(this.toolsByServer);
   }
 
@@ -146,13 +138,13 @@ export class McpRegistry {
       "",
     ];
 
-    for (const [serverName, tools] of this.toolsByServer.entries()) {
+    for (const [serverName, mcpTools] of this.toolsByServer.entries()) {
       lines.push(`// ========================================`);
       lines.push(`// Server: ${serverName}`);
       lines.push(`// ========================================`);
       lines.push("");
       
-      const tsFile = await generateFullTsFile(serverName, tools);
+      const tsFile = await generateFullTsFile(serverName, mcpTools);
       lines.push(tsFile);
       lines.push("");
     }
@@ -165,7 +157,7 @@ export class McpRegistry {
     toolNames?: string[];
   }): Promise<string> {
     // Collect tools based on OR logic
-    const selectedTools = new Set<ToolDefinition>();
+    const selectedTools = new Set<McpToolDefinition>();
     
     // Add all tools from specified servers
     if (options?.serverNames && options.serverNames.length > 0) {
@@ -193,12 +185,12 @@ export class McpRegistry {
       : [...this.tools];
     
     // Group filtered tools by server
-    const toolsByServer = new Map<string, ToolDefinition[]>();
-    for (const tool of filteredTools) {
-      if (!toolsByServer.has(tool.cleanServerName)) {
-        toolsByServer.set(tool.cleanServerName, []);
+    const toolsByServer = new Map<string, McpToolDefinition[]>();
+    for (const mcpTool of filteredTools) {
+      if (!toolsByServer.has(mcpTool.cleanServerName)) {
+        toolsByServer.set(mcpTool.cleanServerName, []);
       }
-      toolsByServer.get(tool.cleanServerName)!.push(tool);
+      toolsByServer.get(mcpTool.cleanServerName)!.push(mcpTool);
     }
     
     const signatures: string[] = [];
@@ -210,14 +202,14 @@ export class McpRegistry {
     }
     // If multiple tools but from single server, use generateFullTsFile
     else if (toolsByServer.size === 1) {
-      const [serverName, tools] = Array.from(toolsByServer.entries())[0];
-      const fullFile = await generateFullTsFile(serverName, tools);
+      const [serverName, mcpTools] = Array.from(toolsByServer.entries())[0];
+      const fullFile = await generateFullTsFile(serverName, mcpTools);
       signatures.push(fullFile);
     }
     // If multiple servers, generate full file for each server
     else {
-      for (const [serverName, tools] of toolsByServer.entries()) {
-        const fullFile = await generateFullTsFile(serverName, tools);
+      for (const [serverName, mcpTools] of toolsByServer.entries()) {
+        const fullFile = await generateFullTsFile(serverName, mcpTools);
         signatures.push(fullFile);
       }
     }
@@ -238,17 +230,17 @@ export class McpRegistry {
       
       lines.push(`${serverPrefix}${serverName}`);
       
-      const tools = this.toolsByServer.get(serverName)!;
-      tools.forEach((tool, toolIndex) => {
-        const isLastTool = toolIndex === tools.length - 1;
+      const mcpTools = this.toolsByServer.get(serverName)!;
+      mcpTools.forEach((mcpTool, toolIndex) => {
+        const isLastTool = toolIndex === mcpTools.length - 1;
         const branch = isLastTool ? "└───" : "├───";
         
-        let line = `${toolPrefix}${branch}${tool.cleanToolName}`;
+        let line = `${toolPrefix}${branch}${mcpTool.cleanToolName}`;
         
-        if (config.includeDescriptions && tool.description) {
-          const desc = tool.description.length > CHAR_LIMIT 
-            ? tool.description.slice(0, CHAR_LIMIT) + "..."
-            : tool.description;
+        if (config.includeDescriptions && mcpTool.description) {
+          const desc = mcpTool.description.length > CHAR_LIMIT 
+            ? mcpTool.description.slice(0, CHAR_LIMIT) + "..."
+            : mcpTool.description;
           line += ` # ${desc}`.replace(/\r?\n|\r/g, ' ');
         }
         

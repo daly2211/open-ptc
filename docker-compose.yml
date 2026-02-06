@@ -6,6 +6,7 @@ services:
     ports:
       - "9730:9730"  # API Server
       - "9731:9731"  # MCP Server
+      - "9733:9733"  # WebSocket Server
     # Uncomment to access host services (use host.docker.internal in mcp_config.json instead of localhost)
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
@@ -13,9 +14,10 @@ services:
       - API_SERVER_PORT=9730
       - MCP_SERVER_PORT=9731
       - RPC_SERVER_PORT=9732
+      - WS_SERVER_PORT=9733
       - RPC_SERVER_URL=http://localhost:9732
       - API_BASE_URL=http://localhost:9730
-      - CODE_EXECUTION_TIMEOUT_MS=10000
+      - CODE_EXECUTION_TIMEOUT_MS=30000
     volumes:
       # Mount config file from host
       - ./mcp_config.json:/app/mcp_config.json:ro

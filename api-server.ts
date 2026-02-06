@@ -8,20 +8,20 @@ const serverConfigs: McpServerConfig[] = JSON.parse(
 );
 
 // Initialize registry and tools
-const registry = await McpRegistry.create(serverConfigs);
-const toolDefinitions = registry.getAllTools();
-const toolsByServer = registry.groupToolsByServer();
+const mcpRegistry = await McpRegistry.create(serverConfigs);
+const mcpTools = mcpRegistry.getAllTools();
+const mcpToolsByServer = mcpRegistry.groupToolsByServer();
 
 const RPC_PORT = parseInt(Deno.env.get("RPC_SERVER_PORT") || "9732");
 const API_PORT = parseInt(Deno.env.get("API_SERVER_PORT") || "9730");
 
 // Start ToolBridge RPC server
-const bridge = new ToolBridge(toolDefinitions);
+const bridge = new ToolBridge(mcpTools);
 const rpcHandler = bridge.getRpcServer();
 const rpcServer = Deno.serve({ port: RPC_PORT, hostname: "0.0.0.0" }, rpcHandler);
 
 // Create code execution engine
-const engine = new CodeExecutionEngine(toolsByServer);
+const codeExecutor = new CodeExecutionEngine(mcpToolsByServer);
 
 // HTTP API Server
 const apiHandler = async (req: Request): Promise<Response> => {
@@ -33,7 +33,7 @@ const apiHandler = async (req: Request): Promise<Response> => {
       const includeDescriptions = url.searchParams.get("descriptions") === "true";
       const charLimit = url.searchParams.get("charLimit") ? parseInt(url.searchParams.get("charLimit")!) : undefined;
       
-      const tree = registry.getToolsTree({ includeDescriptions, charLimit });
+      const tree = mcpRegistry.getToolsTree({ includeDescriptions, charLimit });
       
       return new Response(tree, {
         headers: { "Content-Type": "text/plain" },
@@ -45,7 +45,7 @@ const apiHandler = async (req: Request): Promise<Response> => {
       const serverNames = url.searchParams.get("serverNames")?.split(",").filter(Boolean);
       const toolNames = url.searchParams.get("toolNames")?.split(",").filter(Boolean);
       
-      const signatures = await registry.getSignatures({
+      const signatures = await mcpRegistry.getSignatures({
         serverNames,
         toolNames,
       });
@@ -67,7 +67,7 @@ const apiHandler = async (req: Request): Promise<Response> => {
         );
       }
 
-      const result = await engine.executeCode(code);
+      const result = await codeExecutor.executeCode(code);
       return new Response(JSON.stringify(result, null, 2), {
         headers: { "Content-Type": "application/json" },
       });
@@ -101,7 +101,7 @@ console.log("   POST /exec       - Execute code");
 // Cleanup on exit
 Deno.addSignalListener("SIGINT", async () => {
   console.log("\nShutting down...");
-  await registry.disconnect();
+  await mcpRegistry.disconnect();
   await rpcServer.shutdown();
   await apiServer.shutdown();
   Deno.exit(0);

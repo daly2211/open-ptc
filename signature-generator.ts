@@ -1,7 +1,6 @@
 import { compile } from "json-schema-to-typescript";
 import Ajv from "ajv";
-import type { ToolDefinition } from "./mcp-registry.ts";
-import { cleanupVariableName } from "./mcp-registry.ts";
+import { cleanupVariableName, type BaseToolDefinition } from "./tool-types.ts";
 
 const ajv = new Ajv.default();
 
@@ -122,8 +121,12 @@ function extractParamDescriptions(
   return descriptions;
 }
 
+/**
+ * Generate TypeScript signature from any tool definition (MCP or WebSocket).
+ * Accepts BaseToolDefinition which is the common interface for all tool types.
+ */
 export async function generateTsSignatureFromTool(
-  tool: ToolDefinition,
+  tool: BaseToolDefinition,
 ): Promise<string> {
   const funcName = cleanupVariableName(tool.toolName);
   const inputType = await schemaToInlineType(tool.inputSchema, "InputType");
@@ -148,9 +151,13 @@ export async function generateTsSignatureFromTool(
   return `${jsDoc}\n${funcName}(input: ${inputType}): Promise<${outputType}>;`;
 }
 
+/**
+ * Generate a full TypeScript file with all tool signatures for a namespace.
+ * Works with any tool type implementing BaseToolDefinition.
+ */
 export async function generateFullTsFile(
   source: string,
-  tools: ToolDefinition[],
+  tools: BaseToolDefinition[],
 ): Promise<string> {
   let fileText = `// Function signatures for ${source}\n\n`;
 

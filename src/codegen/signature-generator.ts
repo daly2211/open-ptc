@@ -4,7 +4,7 @@ import { cleanupVariableName, type BaseToolDefinition } from "@/shared/tool-type
 
 const ajv = new Ajv.default();
 
-/** Adds indentation to a given string */
+// Adds indentation to a given string
 function addIndentation(str: string, indent: number = 2): string {
   const indentation = " ".repeat(indent);
   return str
@@ -13,7 +13,7 @@ function addIndentation(str: string, indent: number = 2): string {
     .join("\n");
 }
 
-/** Finds matching closing brace accounting for nested braces and strings */
+// Finds matching closing brace accounting for nested braces and strings
 function findMatchingBrace(code: string, openIndex: number): number {
   let depth = 0;
   let inString = false;
@@ -39,7 +39,7 @@ function findMatchingBrace(code: string, openIndex: number): number {
   return -1;
 }
 
-/** Extracts inline type definition from generated TypeScript interface code */
+// Extracts inline type definition from generated TypeScript interface code
 function extractInlineType(code: string): string {
   const start = code.indexOf("{");
   const end = findMatchingBrace(code, start);
@@ -54,7 +54,7 @@ function extractInlineType(code: string): string {
   return `{ ${body} }`;
 }
 
-/** Converts JSON schema to inline TypeScript type */
+// Converts JSON schema to inline TypeScript type
 async function schemaToInlineType(
   schema: object,
   typeName: string,
@@ -67,7 +67,7 @@ async function schemaToInlineType(
   return extractInlineType(ts);
 }
 
-/** Creates a runtime type guard function from a JSON schema using Ajv */
+// Creates a runtime type guard function from a JSON schema using Ajv
 export function schemaToTypeGuard(schema: object): (value: unknown) => boolean {
   const validate = ajv.compile(schema);
   
@@ -76,7 +76,7 @@ export function schemaToTypeGuard(schema: object): (value: unknown) => boolean {
   };
 }
 
-/** Generates JSDoc comment with function and parameter descriptions */
+// Generates JSDoc comment with function and parameter descriptions
 function generateJsDocComment(
   description?: string,
   paramDescriptions?: Record<string, string>,
@@ -102,7 +102,7 @@ function generateJsDocComment(
   return lines.join("\n");
 }
 
-/** Extracts parameter descriptions from JSON schema properties */
+// Extracts parameter descriptions from JSON schema properties
 function extractParamDescriptions(
   schema: { properties?: Record<string, unknown> },
 ): Record<string, string> {
@@ -121,10 +121,8 @@ function extractParamDescriptions(
   return descriptions;
 }
 
-/**
- * Generate TypeScript signature from any tool definition (MCP or WebSocket).
- * Accepts BaseToolDefinition which is the common interface for all tool types.
- */
+// Generate TypeScript signature from any tool definition (MCP or WebSocket).
+// Accepts BaseToolDefinition which is the common interface for all tool types.
 export async function generateTsSignatureFromTool(
   tool: BaseToolDefinition,
 ): Promise<string> {
@@ -151,10 +149,8 @@ export async function generateTsSignatureFromTool(
   return `${jsDoc}\n${funcName}(input: ${inputType}): Promise<${outputType}>;`;
 }
 
-/**
- * Generate a full TypeScript file with all tool signatures for a namespace.
- * Works with any tool type implementing BaseToolDefinition.
- */
+// Generate a full TypeScript file with all tool signatures for a namespace.
+// Works with any tool type implementing BaseToolDefinition.
 export async function generateFullTsFile(
   source: string,
   tools: BaseToolDefinition[],

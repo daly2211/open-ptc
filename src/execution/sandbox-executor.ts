@@ -13,16 +13,12 @@ export class CodeExecutionEngine {
     this.wsToolRegistry = wsToolRegistry;
   }
 
-  /**
-   * Set or update the WebSocket tool registry
-   */
+  // Set or update the WebSocket tool registry
   setWsToolRegistry(registry: WsToolRegistry): void {
     this.wsToolRegistry = registry;
   }
 
-  /**
-   * Generate proxy code for MCP tools
-   */
+  // Generate proxy code for MCP tools
   private generateMcpProxyCode(): string {
     const serverProxies: string[] = [];
 
@@ -40,9 +36,7 @@ export class CodeExecutionEngine {
     return serverProxies.join("\n\n");
   }
 
-  /**
-   * Generate proxy code for WebSocket tools (connection-specific)
-   */
+  // Generate proxy code for WebSocket tools (connection-specific)
   private generateWsProxyCode(connectionId: string): string {
     if (!this.wsToolRegistry) {
       return "";
@@ -63,9 +57,7 @@ export class CodeExecutionEngine {
     return `const main = {\n${toolProxies}\n};`;
   }
 
-  /**
-   * Generate full proxy code (MCP + optional WS tools)
-   */
+  // Generate full proxy code (MCP + optional WS tools)
   private generateProxyCode(connectionId?: string): string {
     const mcpProxies = this.generateMcpProxyCode();
 
@@ -77,18 +69,14 @@ export class CodeExecutionEngine {
     return mcpProxies;
   }
 
-  /**
-   * Execute code in sandbox (existing API for non-WebSocket clients)
-   */
+  // Execute code in sandbox (existing API for non-WebSocket clients)
   executeCode(
     code: string
   ): Promise<{ success: boolean; output: string }> {
     return this.runInSandbox(code, this.generateMcpProxyCode());
   }
 
-  /**
-   * Execute code in sandbox with connection-specific WebSocket tools
-   */
+  // Execute code in sandbox with connection-specific WebSocket tools
   executeCodeForConnection(
     code: string,
     connectionId: string
@@ -96,9 +84,7 @@ export class CodeExecutionEngine {
     return this.runInSandbox(code, this.generateProxyCode(connectionId));
   }
 
-  /**
-   * Internal method to run code in Deno sandbox
-   */
+  // Internal method to run code in Deno sandbox
   private async runInSandbox(
     code: string,
     proxyCode: string

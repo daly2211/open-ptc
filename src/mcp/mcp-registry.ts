@@ -11,10 +11,8 @@ export interface McpServerConfig {
   transport: TransportConfig;
 }
 
-/**
- * MCP-specific tool definition extending the base tool definition
- * with MCP transport and client metadata
- */
+// MCP-specific tool definition extending the base tool definition
+// with MCP transport and client metadata
 export interface McpToolDefinition extends BaseToolDefinition {
   serverName: string;
   cleanServerName: string;

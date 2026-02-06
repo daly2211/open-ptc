@@ -1,9 +1,7 @@
-/**
- * Example MCP Client Usage
- * 
- * This demonstrates how to connect to the open-codemode MCP server
- * and use its tools to explore and execute code.
- */
+// Example MCP Client Usage
+//
+// This demonstrates how to connect to the open-codemode MCP server
+// and use its tools to explore and execute code.
 
 import { McpClient } from "@/mcp/mcp-client.ts";
 

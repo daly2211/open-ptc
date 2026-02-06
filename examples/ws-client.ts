@@ -1,13 +1,11 @@
-/**
- * Example WebSocket Client
- * 
- * Demonstrates how to:
- * 1. Connect to the WebSocket server
- * 2. Register custom tools
- * 3. Get tool signatures
- * 4. Execute code that uses both MCP and custom tools
- * 5. Handle tool calls from the server
- */
+// Example WebSocket Client
+//
+// Demonstrates how to:
+// 1. Connect to the WebSocket server
+// 2. Register custom tools
+// 3. Get tool signatures
+// 4. Execute code that uses both MCP and custom tools
+// 5. Handle tool calls from the server
 
 import "@std/dotenv/load";
 import type { ClientMessage, ServerMessage, ToolCallMessage, ClientToolDescriptor } from "@/ws/ws-protocol.ts";
@@ -24,9 +22,7 @@ class ExampleWsClient {
   private connected = false;
   private connectPromise: Promise<void> | null = null;
 
-  /**
-   * Connect to the WebSocket server
-   */
+  // Connect to the WebSocket server
   async connect(): Promise<void> {
     if (this.connected) return;
     
@@ -62,16 +58,12 @@ class ExampleWsClient {
     return this.connectPromise;
   }
 
-  /**
-   * Register a tool handler
-   */
+  // Register a tool handler
   registerToolHandler(name: string, handler: (args: unknown) => Promise<unknown>): void {
     this.toolHandlers.set(name, handler);
   }
 
-  /**
-   * Register tools with the server
-   */
+  // Register tools with the server
   async registerTools(tools: ClientToolDescriptor[]): Promise<void> {
     return new Promise((resolve, reject) => {
       const messageHandler = (event: MessageEvent) => {
@@ -91,9 +83,7 @@ class ExampleWsClient {
     });
   }
 
-  /**
-   * Get tool signatures
-   */
+  // Get tool signatures
   async getSignatures(serverNames?: string[], toolNames?: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
       const messageHandler = (event: MessageEvent) => {
@@ -112,9 +102,7 @@ class ExampleWsClient {
     });
   }
 
-  /**
-   * Execute code
-   */
+  // Execute code
   async executeCode(code: string): Promise<{ success: boolean; output?: string; error?: string }> {
     const executionId = `exec_${Date.now()}`;
 
@@ -124,9 +112,7 @@ class ExampleWsClient {
     });
   }
 
-  /**
-   * Handle incoming messages
-   */
+  // Handle incoming messages
   private handleMessage(message: ServerMessage): void {
     switch (message.type) {
       case "tool_call":
@@ -151,9 +137,7 @@ class ExampleWsClient {
     }
   }
 
-  /**
-   * Handle tool call from server
-   */
+  // Handle tool call from server
   private async handleToolCall(message: ToolCallMessage): Promise<void> {
     const handler = this.toolHandlers.get(message.toolName);
 
@@ -182,18 +166,14 @@ class ExampleWsClient {
     }
   }
 
-  /**
-   * Send a message to the server
-   */
+  // Send a message to the server
   private send(message: ClientMessage): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     }
   }
 
-  /**
-   * Disconnect from the server
-   */
+  // Disconnect from the server
   disconnect(): void {
     this.ws?.close();
   }

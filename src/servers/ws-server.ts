@@ -1,14 +1,14 @@
 import "@std/dotenv/load";
-import { McpRegistry } from "./mcp-registry.ts";
-import { ToolBridge } from "./tool-bridge.ts";
-import { CodeExecutionEngine } from "./sandbox-executor.ts";
-import { WsToolRegistry } from "./ws-tool-registry.ts";
-import { generateFullTsFile } from "./signature-generator.ts";
+import { McpRegistry } from "@/mcp/mcp-registry.ts";
+import { ToolBridge } from "@/bridge/tool-bridge.ts";
+import { CodeExecutionEngine } from "@/execution/sandbox-executor.ts";
+import { WsToolRegistry } from "@/ws/ws-tool-registry.ts";
+import { generateFullTsFile } from "@/codegen/signature-generator.ts";
 import type {
   ClientMessage,
   ServerMessage,
   ClientToolDescriptor,
-} from "./ws-protocol.ts";
+} from "@/ws/ws-protocol.ts";
 
 export class WsServer {
   private connections = new Map<string, WebSocket>();
@@ -212,7 +212,7 @@ export class WsServer {
 
 if (import.meta.main) {
   const serverConfigs = JSON.parse(
-    await Deno.readTextFile(new URL("./mcp_config.json", import.meta.url))
+    await Deno.readTextFile(new URL("../../mcp_config.json", import.meta.url))
   );
 
   // Initialize MCP registry

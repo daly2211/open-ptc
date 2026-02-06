@@ -10,7 +10,7 @@
  */
 
 import "@std/dotenv/load";
-import type { ClientMessage, ServerMessage, ToolCallMessage, ClientToolDescriptor } from "./ws-protocol.ts";
+import type { ClientMessage, ServerMessage, ToolCallMessage, ClientToolDescriptor } from "@/ws/ws-protocol.ts";
 
 const WS_SERVER_URL = Deno.env.get("WS_SERVER_URL") || "ws://localhost:9733";
 

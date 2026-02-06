@@ -1,6 +1,6 @@
-import { schemaToTypeGuard } from "./signature-generator.ts";
-import { cleanupVariableName, type BaseToolDefinition } from "./tool-types.ts";
-import type { ClientToolDescriptor } from "./ws-protocol.ts";
+import { schemaToTypeGuard } from "@/codegen/signature-generator.ts";
+import { cleanupVariableName, type BaseToolDefinition } from "@/shared/tool-types.ts";
+import type { ClientToolDescriptor } from "@/ws/ws-protocol.ts";
 
 // WebSocket tool definition with connection-specific metadata
 export interface WsToolDefinition extends BaseToolDefinition {

@@ -1,15 +1,11 @@
 import { McpClient } from "./mcp-client.ts";
-import { 
-  schemaToTypeGuard, 
+import {
+  schemaToTypeGuard,
   generateTsSignatureFromTool,
   generateFullTsFile 
-} from "./signature-generator.ts";
-import type { TransportConfig } from "./mcp-client.ts";
-import { cleanupVariableName, type BaseToolDefinition } from "./tool-types.ts";
-
-// Re-export cleanupVariableName for backward compatibility
-export { cleanupVariableName } from "./tool-types.ts";
-
+} from "@/codegen/signature-generator.ts";
+import type { TransportConfig } from "@/mcp/mcp-client.ts";
+import { cleanupVariableName, type BaseToolDefinition } from "@/shared/tool-types.ts";
 export interface McpServerConfig {
   name: string;
   transport: TransportConfig;

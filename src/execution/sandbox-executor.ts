@@ -1,5 +1,5 @@
-import type { McpToolDefinition } from "./mcp-registry.ts";
-import type { WsToolRegistry } from "./ws-tool-registry.ts";
+import type { McpToolDefinition } from "@/mcp/mcp-registry.ts";
+import type { WsToolRegistry } from "@/ws/ws-tool-registry.ts";
 
 export class CodeExecutionEngine {
   private readonly mcpToolsByServer: Map<string, McpToolDefinition[]>;
@@ -104,7 +104,7 @@ export class CodeExecutionEngine {
     proxyCode: string
   ): Promise<{ success: boolean; output: string }> {
     const rpcClientCode = await Deno.readTextFile(
-      new URL("./jrpc-client.ts", import.meta.url)
+      new URL("../bridge/jrpc-client.ts", import.meta.url)
     );
 
     const rpcUrl = Deno.env.get("RPC_SERVER_URL") || "http://localhost:9732";
@@ -167,10 +167,10 @@ ${code}
 
 if (import.meta.main) {
   await import("@std/dotenv/load");
-  const { McpRegistry } = await import("./mcp-registry.ts");
+  const { McpRegistry } = await import("@/mcp/mcp-registry.ts");
 
   const servers = JSON.parse(
-    await Deno.readTextFile(new URL("./mcp_config.json", import.meta.url))
+    await Deno.readTextFile(new URL("../../mcp_config.json", import.meta.url))
   );
 
   const mcpRegistry = await McpRegistry.create(servers);

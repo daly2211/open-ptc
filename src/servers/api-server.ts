@@ -1,10 +1,10 @@
 import "@std/dotenv/load";
-import { McpRegistry, type McpServerConfig } from "./mcp-registry.ts";
-import { ToolBridge } from "./tool-bridge.ts";
-import { CodeExecutionEngine } from "./sandbox-executor.ts";
+import { McpRegistry, type McpServerConfig } from "@/mcp/mcp-registry.ts";
+import { ToolBridge } from "@/bridge/tool-bridge.ts";
+import { CodeExecutionEngine } from "@/execution/sandbox-executor.ts";
 
 const serverConfigs: McpServerConfig[] = JSON.parse(
-  await Deno.readTextFile(new URL("./mcp_config.json", import.meta.url))
+  await Deno.readTextFile(new URL("../../mcp_config.json", import.meta.url))
 );
 
 // Initialize registry and tools

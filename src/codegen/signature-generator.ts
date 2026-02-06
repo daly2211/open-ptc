@@ -1,6 +1,6 @@
 import { compile } from "json-schema-to-typescript";
 import Ajv from "ajv";
-import { cleanupVariableName, type BaseToolDefinition } from "./tool-types.ts";
+import { cleanupVariableName, type BaseToolDefinition } from "@/shared/tool-types.ts";
 
 const ajv = new Ajv.default();
 

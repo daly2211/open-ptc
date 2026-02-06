@@ -1,8 +1,8 @@
 import { JSONRPCServer } from "@yieldray/json-rpc-ts";
-import { McpClient } from "./mcp-client.ts";
-import type { McpToolDefinition } from "./mcp-registry.ts";
-import type { WsToolRegistry } from "./ws-tool-registry.ts";
-import { WS_CONFIG } from "./ws-protocol.ts";
+import { McpClient } from "@/mcp/mcp-client.ts";
+import type { McpToolDefinition } from "@/mcp/mcp-registry.ts";
+import type { WsToolRegistry } from "@/ws/ws-tool-registry.ts";
+import { WS_CONFIG } from "@/ws/ws-protocol.ts";
 
 interface McpToolRegistration {
   type: "mcp";
@@ -312,10 +312,10 @@ export class ToolBridge {
 
 // Example usage
 if (import.meta.main) {
-  const { McpRegistry } = await import("./mcp-registry.ts");
+  const { McpRegistry } = await import("@/mcp/mcp-registry.ts");
 
   const servers = JSON.parse(
-    await Deno.readTextFile(new URL("./mcp_config.json", import.meta.url))
+    await Deno.readTextFile(new URL("../../mcp_config.json", import.meta.url))
   );
 
   const mcpRegistry = await McpRegistry.create(servers);

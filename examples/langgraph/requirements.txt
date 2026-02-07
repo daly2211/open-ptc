@@ -1,0 +1,11 @@
+# LangGraph and LangChain dependencies
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+langchain-core>=0.3.0
+
+# WebSocket client
+websocket-client>=1.7.0
+
+# Environment variable management
+python-dotenv>=1.0.0

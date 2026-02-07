@@ -1,155 +1,111 @@
-import "@std/dotenv/load";
+/**
+ * REST API Client Example
+ *
+ * Demonstrates the three main HTTP endpoints:
+ *   GET  /tree        — Browse available tools as a tree
+ *   GET  /signatures  — Retrieve generated TypeScript signatures
+ *   POST /exec        — Execute code in the sandbox
+ *
+ * Run:  deno run --allow-all examples/api-client.ts
+ */
 
-// Example API client for testing the HTTP server endpoints
+import "@std/dotenv/load";
 
 const API_BASE = Deno.env.get("API_BASE_URL") || "http://localhost:9730";
 
-async function getTree(includeDescriptions: boolean, charLimit?: number) {
-  console.log("\n=== Test: Get Tools Tree ===");
-  let url = `${API_BASE}/tree?descriptions=${includeDescriptions}`;
-  if (charLimit !== undefined) {
-    url += `&charLimit=${charLimit}`;
+interface ExecResult {
+  success: boolean;
+  output: string;
+}
+
+interface ErrorResponse {
+  error: string;
+  message?: string;
+}
+
+class ApiClient {
+  constructor(private baseUrl: string) {}
+
+  async getToolsTree(includeDescriptions = false, charLimit?: number): Promise<string> {
+    const params = new URLSearchParams();
+    params.set("descriptions", String(includeDescriptions));
+    if (charLimit) params.set("charLimit", String(charLimit));
+    
+    const response = await fetch(`${this.baseUrl}/tree?${params}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    return await response.text();
   }
-  const response = await fetch(url);
-  const data = await response.text();
-  console.log("Status:", response.status);
-  console.log("Tree:", data);
+
+  async getSignatures(options?: { serverNames?: string[]; toolNames?: string[] }): Promise<string> {
+    const params = new URLSearchParams();
+    if (options?.serverNames) params.set("serverNames", options.serverNames.join(","));
+    if (options?.toolNames) params.set("toolNames", options.toolNames.join(","));
+    
+    const url = params.toString() ? `${this.baseUrl}/signatures?${params}` : `${this.baseUrl}/signatures`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    return await response.text();
+  }
+
+  async executeCode(code: string): Promise<ExecResult> {
+    const response = await fetch(`${this.baseUrl}/exec`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    
+    if (!response.ok) {
+      const error: ErrorResponse = await response.json();
+      throw new Error(error.message || error.error);
+    }
+    
+    return await response.json();
+  }
 }
 
-async function testGetAllSignatures() {
-  console.log("\n=== Test: Get All Signatures ===");
-  const response = await fetch(`${API_BASE}/signatures`);
-  const data = await response.text();
-  console.log("Status:", response.status);
-  console.log("Signatures:", data);
-}
-
-async function testGetSignaturesByServer() {
-  console.log("\n=== Test: Get Signatures by Server ===");
-  const response = await fetch(`${API_BASE}/signatures?serverNames=tavily_mcp`);
-  const data = await response.text();
-  console.log("Status:", response.status);
-  console.log("Signatures:", data);
-}
-
-async function testGetSignaturesByToolName() {
-  console.log("\n=== Test: Get Signatures by Tool Name ===");
-  const response = await fetch(`${API_BASE}/signatures?toolNames=tavily_mcp.tavily_search`);
-  const data = await response.text();
-  console.log("Status:", response.status);
-  console.log("Signatures:", data);
-}
-
-async function testGetSignaturesCombined() {
-  console.log("\n=== Test: Get Signatures Combined (Server + Tool) ===");
-  const response = await fetch(
-    `${API_BASE}/signatures?serverNames=tavily_mcp&toolNames=tavily_mcp.tavily_extract`
-  );
-  const data = await response.text();
-  console.log("Status:", response.status);
-  console.log("Signatures:", data);
-}
-
-async function testExecuteCode() {
-  console.log("\n=== Test: Execute Code ===");
-  const code = `
-const result = await tavily_mcp.tavily_search({
-  query: 'What is Deno?',
-  max_results: 2
-});
-console.log(JSON.stringify(result.results[0].title));
-`;
-
-  const response = await fetch(`${API_BASE}/exec`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
-  });
-  const data = await response.json();
-  console.log("Status:", response.status);
-  console.log("Result:", data);
-}
-
-async function testExecuteCodeOneMinute() {
-  console.log("\n=== Test: Execute Code (1 Minute) ===");
-  const code = `
-const start = Date.now();
-await new Promise((resolve) => setTimeout(resolve, 60_000));
-console.log(\`Waited \${Math.round((Date.now() - start) / 1000)} seconds\`);
-`;
-
-  const response = await fetch(`${API_BASE}/exec`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
-  });
-  const data = await response.json();
-  console.log("Status:", response.status);
-  console.log("Result:", data);
-}
-
-async function testExecuteCodeError() {
-  console.log("\n=== Test: Execute Code with Error ===");
-  const code = `
-// This will cause an error
-const result = await nonexistent_server.fake_tool({ foo: "bar" });
-`;
-
-  const response = await fetch(`${API_BASE}/exec`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
-  });
-  const data = await response.json();
-  console.log("Status:", response.status);
-  console.log("Result:", data);
-}
-
-async function testMissingCode() {
-  console.log("\n=== Test: Missing Code Field ===");
-  const response = await fetch(`${API_BASE}/exec`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({}),
-  });
-  const data = await response.json();
-  console.log("Status:", response.status);
-  console.log("Error:", data);
-}
-
-async function testNotFound() {
-  console.log("\n=== Test: 404 Not Found ===");
-  const response = await fetch(`${API_BASE}/nonexistent`);
-  const data = await response.json();
-  console.log("Status:", response.status);
-  console.log("Error:", data);
-}
-
-// Run all tests
-async function runTests() {
-  console.log("Starting API tests...");
-  console.log("Make sure httpServer.ts is running on port 9730");
+async function main() {
+  const client = new ApiClient(API_BASE);
 
   try {
-    await getTree(false);
-    await getTree(true, 100);
-    await testGetAllSignatures();
-    await testGetSignaturesByServer();
-    await testGetSignaturesByToolName();
-    await testGetSignaturesCombined();
-    await testExecuteCode();
-    await testExecuteCodeOneMinute();
-    await testExecuteCodeError();
-    await testMissingCode();
-    await testNotFound();
+    console.log("\n=== 1. Get Tools Tree ===");
+    const tree = await client.getToolsTree(false);
+    console.log(tree);
 
-    console.log("\n=== All tests completed ===");
+    console.log("\n=== 2. Get All Tool Signatures ===");
+    const signatures = await client.getSignatures();
+    console.log(signatures.slice(0, 500) + "...\n");
+
+    console.log("\n=== 3. Execute Simple Code ===");
+    const simpleCode = `
+console.log("Hello from sandboxed execution!");
+console.log("2 + 2 =", 2 + 2);
+`;
+    const result1 = await client.executeCode(simpleCode);
+    console.log("Success:", result1.success);
+    console.log("Output:", result1.output);
+
+    console.log("\n=== 4. Execute Code with MCP Tools ===");
+    console.log("Note: This requires MCP servers configured in mcp_config.json");
+    const mcpCode = `
+// Example: If you have an MCP server configured with tools,
+// you can call them like this:
+// const result = await <server_name>.<tool_name>({ arg: "value" });
+// console.log(result);
+
+console.log("Available tool namespaces are shown in the tree above");
+`;
+    const result2 = await client.executeCode(mcpCode);
+    console.log("Output:", result2.output);
+
+    console.log("\n=== All examples completed ===");
   } catch (error) {
-    console.error("\nTest failed:", error);
-    console.error("Make sure the server is running: deno run --allow-net --allow-read --allow-env httpServer.ts");
+    console.error("\n❌ Error:", error instanceof Error ? error.message : String(error));
+    console.error("\nMake sure the server is running:");
+    console.error("  deno run --allow-all src/servers/api-server.ts");
+    Deno.exit(1);
   }
 }
 
 if (import.meta.main) {
-  runTests();
+  main();
 }

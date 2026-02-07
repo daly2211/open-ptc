@@ -64,6 +64,16 @@ async function schemaToInlineType(
     format: false,
     additionalProperties: false,
   });
+  
+  // Check if it's a type alias (e.g., "export type X = number")
+  // vs an interface (e.g., "export interface X { ... }")
+  const typeAliasMatch = ts.match(/export\s+type\s+\w+\s*=\s*(.+?)(?:\n|$)/s);
+  if (typeAliasMatch) {
+    // Extract the type after the equals sign
+    return typeAliasMatch[1].trim();
+  }
+  
+  // Otherwise it's an interface, extract the body
   return extractInlineType(ts);
 }
 

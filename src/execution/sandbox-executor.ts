@@ -84,6 +84,26 @@ export class CodeExecutionEngine {
     return this.runInSandbox(code, this.generateProxyCode(connectionId));
   }
 
+  // Generate proxy code for PTC runtime tools (API mode)
+  private generateApiProxyCode(sessionId: string, runtimeTools: { name: string }[]): string {
+    const toolProxies = runtimeTools
+      .map(t => `  ${t.name}: (input) => callTool('api_${sessionId}.${t.name}', input)`)
+      .join(",\n");
+    return `const main = {\n${toolProxies}\n};`;
+  }
+
+  // Execute code in sandbox with MCP tools + PTC runtime tools
+  executeCodeForApiSession(
+    code: string,
+    sessionId: string,
+    runtimeTools: { name: string }[]
+  ): Promise<{ success: boolean; output: string }> {
+    const mcpProxies = this.generateMcpProxyCode();
+    const apiProxies = this.generateApiProxyCode(sessionId, runtimeTools);
+    const proxyCode = apiProxies ? `${mcpProxies}\n\n${apiProxies}` : mcpProxies;
+    return this.runInSandbox(code, proxyCode);
+  }
+
   // Internal method to run code in Deno sandbox
   private async runInSandbox(
     code: string,

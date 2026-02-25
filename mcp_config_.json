@@ -1,0 +1,9 @@
+[
+  {
+    "name": "tavily",
+    "transport": {
+      "type": "http",
+      "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=${TAVILY_API_KEY}"
+    }
+  }
+]

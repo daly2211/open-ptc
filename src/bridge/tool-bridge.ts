@@ -3,6 +3,7 @@ import { McpClient } from "@/mcp/mcp-client.ts";
 import type { McpToolDefinition } from "@/mcp/mcp-registry.ts";
 import type { WsToolRegistry } from "@/ws/ws-tool-registry.ts";
 import { WS_CONFIG } from "@/ws/ws-protocol.ts";
+import { schemaToTypeGuard } from "@/codegen/signature-generator.ts";
 
 interface McpToolRegistration {
   type: "mcp";
@@ -10,6 +11,22 @@ interface McpToolRegistration {
   mcpClient: McpClient;
   toolName: string;
   guardFunction: (value: unknown) => boolean;
+}
+
+interface ApiToolDefinition {
+  referenceName: string;
+  toolName: string;
+  guardFunction: (args: unknown) => boolean;
+  sessionId: string;
+}
+
+interface PendingApiToolCall {
+  callId: string;
+  toolName: string;
+  args: unknown;
+  sessionId: string;
+  resolve: (value: unknown) => void;
+  reject: (error: Error) => void;
 }
 
 interface ToolCallRequest {
@@ -42,6 +59,12 @@ export class ToolBridge {
   private getWebSocket?: (connectionId: string) => WebSocket | undefined;
   private wsCallCounter = 0;
 
+  // API mode support (PTC Proxy)
+  private apiToolRegistry = new Map<string, ApiToolDefinition>();
+  private apiPendingCalls = new Map<string, PendingApiToolCall>();
+  private onApiToolCall?: (callId: string, toolName: string, args: unknown, sessionId: string) => void;
+  private apiCallCounter = 0;
+
   constructor(mcpTools: McpToolDefinition[]) {
     // Register MCP tools
     for (const mcpTool of mcpTools) {
@@ -73,11 +96,75 @@ export class ToolBridge {
     this.getWebSocket = getWebSocket;
   }
 
+  // Configure API mode for PTC Proxy
+  configureApiMode(
+    onApiToolCall: (callId: string, toolName: string, args: unknown, sessionId: string) => void
+  ): void {
+    this.onApiToolCall = onApiToolCall;
+  }
+
+  // Register tools for an API session
+  registerApiTools(
+    sessionId: string,
+    tools: Array<{
+      name: string;
+      parameters?: object;
+    }>
+  ): void {
+    for (const tool of tools) {
+      const referenceName = `api_${sessionId}.${tool.name}`;
+      this.apiToolRegistry.set(referenceName, {
+        referenceName,
+        toolName: tool.name,
+        guardFunction: tool.parameters
+          ? schemaToTypeGuard(tool.parameters)
+          : () => true,
+        sessionId,
+      });
+    }
+  }
+
+  // Unregister all tools for a session and cancel pending calls
+  unregisterApiTools(sessionId: string): void {
+    const prefix = `api_${sessionId}.`;
+    for (const [ref] of this.apiToolRegistry) {
+      if (ref.startsWith(prefix)) {
+        this.apiToolRegistry.delete(ref);
+      }
+    }
+    for (const [callId, pending] of this.apiPendingCalls) {
+      if (pending.sessionId === sessionId) {
+        pending.reject(new Error("Session cancelled"));
+        this.apiPendingCalls.delete(callId);
+      }
+    }
+  }
+
+  // Resolve a pending API tool call
+  resolveApiToolCall(callId: string, result: unknown, error?: string): boolean {
+    const pending = this.apiPendingCalls.get(callId);
+    if (!pending) return false;
+    this.apiPendingCalls.delete(callId);
+
+    if (error) {
+      pending.reject(new Error(error));
+    } else {
+      pending.resolve(result);
+    }
+
+    return true;
+  }
+
   // Handle tool call requests (routes to MCP or WebSocket tools based on namespace)
   private async handleToolCall(
     request: ToolCallRequest
   ): Promise<ToolCallResponse | unknown> {
     const { toolRef, args = {} } = request;
+
+    // Check API tools first (prefix: api_)
+    if (toolRef.startsWith("api_")) {
+      return await this.handleApiToolCall(request);
+    }
 
     // Check if it's a WebSocket tool (namespace starts with main_)
     if (toolRef.startsWith("main_")) {
@@ -228,6 +315,46 @@ export class ToolBridge {
         success: true,
         data,
       };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  // Handle API tool call requests (PTC Proxy mode)
+  private async handleApiToolCall(request: ToolCallRequest): Promise<ToolCallResponse> {
+    const { toolRef, args = {} } = request;
+
+    const tool = this.apiToolRegistry.get(toolRef);
+    if (!tool) {
+      return { success: false, error: `Tool not found: ${toolRef}` };
+    }
+
+    if (!tool.guardFunction(args)) {
+      return { success: false, error: `Invalid arguments for ${toolRef}` };
+    }
+
+    const callId = `api_${Date.now()}_${++this.apiCallCounter}`;
+
+    try {
+      const data = await new Promise((resolve, reject) => {
+        this.apiPendingCalls.set(callId, {
+          callId,
+          toolName: tool.toolName,
+          args,
+          sessionId: tool.sessionId,
+          resolve,
+          reject,
+        });
+
+        if (this.onApiToolCall) {
+          this.onApiToolCall(callId, tool.toolName, args, tool.sessionId);
+        }
+      });
+
+      return { success: true, data };
     } catch (error) {
       return {
         success: false,

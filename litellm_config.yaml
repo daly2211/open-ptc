@@ -1,0 +1,11 @@
+model_list:
+  - model_name: gpt-5.2-chat
+    litellm_params:
+      model: azure/gpt-5.2-chat
+      api_key: os.environ/AZURE_GPT_5_API_KEY
+      api_base: os.environ/AZURE_GPT_5_ENDPOINT
+      api_version: 2025-03-01-preview 
+      base_model: gpt-4o  # For cost tracking
+
+# general_settings:
+#   master_key: os.environ/LITELLM_MASTER_KEY

@@ -28,6 +28,7 @@ export interface PtcSession {
   createdAt: number;
   pendingExecutors?: any[];
   executorOutputs?: any[];
+  chainOutputs?: any[];
 }
 
 export interface ToolCallEvent {

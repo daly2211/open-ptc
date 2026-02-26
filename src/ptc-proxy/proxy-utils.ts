@@ -5,7 +5,7 @@
 import { callToSession } from "./session-store.ts";
 import { log } from "./proxy-logger.ts";
 
-// ─── Input helpers ───────────────────────────────────────────────────────────
+// --- Input helpers ---
 
 /**
  * Find a pending runtime tool result in the input.
@@ -89,7 +89,7 @@ export function filterInternalRuntimeCalls(output: any[], sessionId: string): an
     return filtered;
 }
 
-// ─── Tool categorization ─────────────────────────────────────────────────────
+// --- Tool categorization ---
 
 import type { PtcTool } from "./types.ts";
 import { buildReplTool, stripPtcFields } from "./repl-tool-builder.ts";
@@ -128,7 +128,7 @@ export async function buildLlmTools(
     return normalTools.map(stripPtcFields);
 }
 
-// ─── Formatting ──────────────────────────────────────────────────────────────
+// --- Formatting ---
 
 /** Compact one-line summary of an output/input item for logs. */
 export function summarizeItem(o: any): string {

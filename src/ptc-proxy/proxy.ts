@@ -56,7 +56,7 @@ export class PtcProxy {
       const categorized = categorizeTools(rawTools);
       const transformedTools = await buildLlmTools(categorized, this.mcpTools);
 
-      // ── Path A: Client is returning a runtime tool result ────────────
+      // --- Path A: Client is returning a runtime tool result ---
       const toolResult = findToolResult(body.input);
       if (toolResult && callToSession.has(toolResult.call_id)) {
         log.debug("Tool result found for call:", toolResult.call_id?.slice(0, 8));
@@ -81,7 +81,7 @@ export class PtcProxy {
         return c.json(result);
       }
 
-      // ── Path B: Fresh request — send to LLM ─────────────────────────
+      // --- Path B: Fresh request - send to LLM ---
       const cleanInput = stripInternalFields(body.input);
 
       log.debug("Input items:", cleanInput?.length, "| tools:", transformedTools.map((t: any) => t.name)?.join(", "));
@@ -97,7 +97,7 @@ export class PtcProxy {
         log.debug("Function calls:", fcalls.map((o: any) => `${o.name}(${o.call_id?.slice(0, 8)})`).join(", "));
       }
 
-      // ── Path B1: LLM wants to run code_executor ─────────────────────
+      // --- Path B1: LLM wants to run code_executor ---
       const codeCall = llmResponse.output?.find(
         (o: any) => o.type === "function_call" && o.name === "code_executor"
       );
@@ -127,7 +127,7 @@ export class PtcProxy {
         return c.json(result);
       }
 
-      // ── Path B2: No sandbox — forward LLM response directly ─────────
+      // --- Path B2: No sandbox - forward LLM response directly ---
       log.trace("-> client:", llmResponse);
       return c.json(llmResponse);
     });

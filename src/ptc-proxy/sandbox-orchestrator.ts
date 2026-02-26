@@ -17,7 +17,7 @@ import type { PtcTool, ToolCallEvent } from "./types.ts";
 
 const MAX_CHAIN_DEPTH = 10;
 
-// ─── Parameter types ─────────────────────────────────────────────────────────
+// --- Parameter types ---
 
 export interface ExecuteSandboxParams {
     codeCall: any;
@@ -42,7 +42,7 @@ export interface ResumeAfterToolResultParams {
     reqHeaders: Headers;
 }
 
-// ─── Orchestrator ────────────────────────────────────────────────────────────
+// --- Orchestrator ---
 
 export class SandboxOrchestrator {
     private toolCallResolvers = new Map<string, (event: ToolCallEvent) => void>();
@@ -63,7 +63,7 @@ export class SandboxOrchestrator {
         });
     }
 
-    // ── Execute a sandbox session ──────────────────────────────────────────────
+    // --- Execute a sandbox session ---
 
     async execute(params: ExecuteSandboxParams): Promise<any> {
         const {
@@ -106,12 +106,12 @@ export class SandboxOrchestrator {
         // Race: sandbox completes vs. sandbox calls a runtime tool
         const raceResult = await this.raceExecution(sessionId, execPromise);
 
-        // ── Tool-call interrupt ──────────────────────────────────────────────
+        // --- Tool-call interrupt ---
         if (raceResult.type === "tool_call") {
             return this.buildToolCallResponse(raceResult.event, codeCall, llmResult, chainOutputs);
         }
 
-        // ── Sandbox completed ────────────────────────────────────────────────
+        // --- Sandbox completed ---
         const sandboxOutput = raceResult.result.output;
         log.info("Sandbox completed, output length:", sandboxOutput?.length);
         log.trace("Sandbox output:", sandboxOutput?.slice(0, 200));
@@ -207,7 +207,7 @@ export class SandboxOrchestrator {
         return response;
     }
 
-    // ── Resume after client fulfils a runtime tool call ────────────────────────
+    // --- Resume after client fulfils a runtime tool call ---
 
     async resumeAfterToolResult(params: ResumeAfterToolResultParams): Promise<any> {
         const { toolResult, cleanInput, model, tools = [], requestParams = {}, reqHeaders } = params;
@@ -251,7 +251,7 @@ export class SandboxOrchestrator {
         // Race again: sandbox might complete or call another tool
         const raceResult = await this.raceExecution(sessionId, execPromise);
 
-        // ── Another tool-call interrupt ──────────────────────────────────────
+        // --- Another tool-call interrupt ---
         if (raceResult.type === "tool_call") {
             const { callId, toolName, args } = raceResult.event;
             callToSession.set(callId, sessionId);
@@ -272,7 +272,7 @@ export class SandboxOrchestrator {
             };
         }
 
-        // ── Sandbox completed ────────────────────────────────────────────────
+        // --- Sandbox completed ---
         const sandboxOutput = raceResult.result.output;
         log.info("Sandbox completed (from resume)");
         log.trace("Sandbox output:", sandboxOutput?.slice(0, 100));
@@ -359,7 +359,7 @@ export class SandboxOrchestrator {
         return response;
     }
 
-    // ── Private helpers ────────────────────────────────────────────────────────
+    // --- Private helpers ---
 
     private async raceExecution(
         sessionId: string,

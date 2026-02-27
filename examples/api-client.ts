@@ -99,9 +99,9 @@ console.log("Available tool namespaces are shown in the tree above");
 
     console.log("\n=== All examples completed ===");
   } catch (error) {
-    console.error("\n❌ Error:", error instanceof Error ? error.message : String(error));
+    console.error("\n[ERROR] Error:", error instanceof Error ? error.message : String(error));
     console.error("\nMake sure the server is running:");
-    console.error("  deno run --allow-all src/servers/api-server.ts");
+    console.error("  deno run --allow-all src/server.ts --api");
     Deno.exit(1);
   }
 }

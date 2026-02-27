@@ -241,11 +241,21 @@ if (!enableApi && !enableMcp && !enableWs && !enablePtc) {
 }
 
 // Cleanup on exit
+let isShuttingDown = false;
 Deno.addSignalListener("SIGINT", async () => {
+  if (isShuttingDown) {
+    console.log("\nForcing immediate shutdown...");
+    Deno.exit(1);
+  }
+  isShuttingDown = true;
   console.log("\nShutting down...");
-  await mcpRegistry.disconnect();
-  for (const server of servers) {
-    await server.shutdown();
+  try {
+    await mcpRegistry.disconnect();
+    for (const server of servers) {
+      await server.shutdown();
+    }
+  } catch (error) {
+    console.error("Error during shutdown:", error);
   }
   Deno.exit(0);
 });

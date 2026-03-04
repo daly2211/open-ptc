@@ -9,6 +9,12 @@ import { cleanupVariableName, type BaseToolDefinition } from "@/shared/tool-type
 export interface McpServerConfig {
   name: string;
   transport: TransportConfig;
+  tools?: McpToolConfig[];
+}
+
+export interface McpToolConfig {
+  name: string;
+  output_schema?: object | null;
 }
 
 // MCP-specific tool definition extending the base tool definition
@@ -40,6 +46,9 @@ export class McpRegistry {
 
   private async introspectServer(serverConfig: McpServerConfig): Promise<void> {
     const mcpClient = new McpClient(serverConfig.transport);
+    const configuredToolsByName = new Map(
+      (serverConfig.tools ?? []).map((toolConfig) => [toolConfig.name, toolConfig]),
+    );
 
     try {
       await mcpClient.connect();
@@ -54,6 +63,15 @@ export class McpRegistry {
         const toolName = tool.name;
         const cleanToolName = cleanupVariableName(toolName);
         const referenceName = `${cleanServerName}.${cleanToolName}`;
+        const configuredTool = configuredToolsByName.get(toolName);
+
+        let outputSchema: McpToolDefinition["outputSchema"] =
+          tool.outputSchema as McpToolDefinition["outputSchema"];
+        if (configuredTool) {
+          if ("output_schema" in configuredTool) {
+            outputSchema = configuredTool.output_schema;
+          }
+        }
 
         const inputSchema = tool.inputSchema ||
           { type: "object", properties: {}, additionalProperties: true };
@@ -67,7 +85,7 @@ export class McpRegistry {
           cleanToolName,
           description: tool.description,
           inputSchema,
-          outputSchema: tool.outputSchema,
+          outputSchema,
           guardFunction,
           transport: serverConfig.transport,
           mcpClient,

@@ -79,7 +79,7 @@ const toolDefinitions = {
 type ToolName = keyof typeof toolDefinitions;
 
 function setupStdioServer() {
-  const server = new Server({ name: "open-codemode", version: "1.0.0" }, { capabilities: { tools: {} } });
+  const server = new Server({ name: "open-PTC", version: "1.0.0" }, { capabilities: { tools: {} } });
 
   server.setRequestHandler(ListToolsRequestSchema, () => ({
     tools: Object.entries(toolDefinitions).map(([name, def]) => ({
@@ -101,12 +101,12 @@ function setupStdioServer() {
 }
 
 function setupHttpServer() {
-  const server = new McpServer({ 
-    name: "open-codemode", 
-    version: "1.0.0", 
-    schemaAdapter: (schema) => zodToJsonSchema(schema as z.ZodType) 
+  const server = new McpServer({
+    name: "open-PTC",
+    version: "1.0.0",
+    schemaAdapter: (schema) => zodToJsonSchema(schema as z.ZodType)
   });
-  
+
   server.tool("get_tools_tree", toolDefinitions.get_tools_tree);
   server.tool("get_tool_signatures", toolDefinitions.get_tool_signatures);
   server.tool("execute_typescript_code", toolDefinitions.execute_typescript_code);

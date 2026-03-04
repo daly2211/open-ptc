@@ -40,7 +40,7 @@ export class McpClient {
 
   constructor(
     private readonly config: TransportConfig,
-    clientName = "open-codemode",
+    clientName = "open-PTC",
     clientVersion = "1.0.0",
   ) {
     this.client = new Client(

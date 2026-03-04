@@ -1,7 +1,7 @@
 """
 REPL Tool Wrapper for LangGraph Agents
 
-Connects to the open-codemode WebSocket server to provide bidirectional
+Connects to the Open-PTC WebSocket server to provide bidirectional
 tool calling. Python functions are registered as tools on the server,
 and executed code can call them back through the WebSocket connection.
 
@@ -444,7 +444,7 @@ def create_repl_tool(
     timeout: int = 60,
 ) -> Any:
     """
-    Create a LangGraph tool backed by the open-codemode WebSocket server.
+    Create a LangGraph tool backed by the Open-PTC WebSocket server.
 
     Registers the provided Python functions as bidirectional tools on the
     server. The server generates TypeScript signatures from the JSON schemas,
@@ -486,7 +486,7 @@ def create_repl_tool(
         f"{bridge.signatures}\n\n"
         "Use `await` for all function calls. "
         "Use `console.log()` to produce output — only logged values appear "
-        "in the result. Example: `console.log(await get_temperature('NYC'))`"
+        "in the result. Example: `console.log(await main.get_temperature('NYC'))`"
     )
 
     @tool(tool_name)

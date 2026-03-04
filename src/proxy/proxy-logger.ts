@@ -1,5 +1,5 @@
 /**
- * Structured logger for PTC-Proxy with level-based filtering.
+ * Structured logger for Open-PTC Proxy with level-based filtering.
  *
  * Levels (from most to least verbose):
  *   trace  – Full JSON.stringify dumps of requests/responses
@@ -8,7 +8,7 @@
  *   warn   – Warnings
  *   error  – Errors
  *
- * Set via PTC_PROXY_LOG_LEVEL env var (default: "info").
+ * Set via PROXY_LOG_LEVEL env var (default: "info").
  */
 
 declare const Deno: { env: { get(key: string): string | undefined } } | undefined;
@@ -17,7 +17,7 @@ const LEVELS = { trace: 0, debug: 1, info: 2, warn: 3, error: 4 } as const;
 type LogLevel = keyof typeof LEVELS;
 
 function getLevel(): LogLevel {
-    const env = (typeof Deno !== "undefined" ? Deno.env.get("PTC_PROXY_LOG_LEVEL") : undefined) ?? "info";
+    const env = (typeof Deno !== "undefined" ? Deno.env.get("PROXY_LOG_LEVEL") : undefined) ?? "info";
     return (env.toLowerCase() as LogLevel) in LEVELS ? (env.toLowerCase() as LogLevel) : "info";
 }
 
@@ -28,7 +28,7 @@ function shouldLog(level: LogLevel): boolean {
 }
 
 function fmt(level: string, ...args: unknown[]): string {
-    return `[PROXY][${level.toUpperCase()}] ${args.map(a => typeof a === "string" ? a : JSON.stringify(a, null, 2)).join(" ")}`;
+    return `[O-PTC PROXY][${level.toUpperCase()}] ${args.map(a => typeof a === "string" ? a : JSON.stringify(a, null, 2)).join(" ")}`;
 }
 
 export const log = {

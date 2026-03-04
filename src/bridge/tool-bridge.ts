@@ -59,7 +59,7 @@ export class ToolBridge {
   private getWebSocket?: (connectionId: string) => WebSocket | undefined;
   private wsCallCounter = 0;
 
-  // API mode support (PTC Proxy)
+  // API mode support (Proxy)
   private apiToolRegistry = new Map<string, ApiToolDefinition>();
   private apiPendingCalls = new Map<string, PendingApiToolCall>();
   private onApiToolCall?: (callId: string, toolName: string, args: unknown, sessionId: string) => void;
@@ -96,7 +96,7 @@ export class ToolBridge {
     this.getWebSocket = getWebSocket;
   }
 
-  // Configure API mode for PTC Proxy
+  // Configure API mode for Proxy
   configureApiMode(
     onApiToolCall: (callId: string, toolName: string, args: unknown, sessionId: string) => void
   ): void {
@@ -323,7 +323,7 @@ export class ToolBridge {
     }
   }
 
-  // Handle API tool call requests (PTC Proxy mode)
+  // Handle API tool call requests (Proxy mode)
   private async handleApiToolCall(request: ToolCallRequest): Promise<ToolCallResponse> {
     const { toolRef, args = {} } = request;
 

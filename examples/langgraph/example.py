@@ -1,7 +1,7 @@
 """
-LangGraph + open-codemode example.
+LangGraph + Open-PTC Example.
 
-Connects to the open-codemode WebSocket server, registers Python functions,
+Connects to the Open-PTC WebSocket server, registers Python functions,
 and creates an agent that executes TypeScript in a sandbox — calling your
 functions back over the WebSocket connection.
 

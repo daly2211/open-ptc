@@ -1,8 +1,8 @@
 """
-LangGraph integration for open-codemode.
+LangGraph integration for Open-PTC.
 
 Provides bidirectional tool calling between LangGraph agents
-and the open-codemode WebSocket execution environment.
+and the Open-PTC WebSocket execution environment.
 """
 
 from .repl_tool import repl_tool, create_repl_tool

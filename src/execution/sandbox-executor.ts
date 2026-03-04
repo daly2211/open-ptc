@@ -84,7 +84,7 @@ export class CodeExecutionEngine {
     return this.runInSandbox(code, this.generateProxyCode(connectionId));
   }
 
-  // Generate proxy code for PTC runtime tools (API mode)
+  // Generate proxy code for runtime tools (API mode)
   private generateApiProxyCode(sessionId: string, runtimeTools: { name: string }[]): string {
     const toolProxies = runtimeTools
       .map(t => `  ${t.name}: (input) => callTool('api_${sessionId}.${t.name}', input)`)
@@ -92,7 +92,7 @@ export class CodeExecutionEngine {
     return `const main = {\n${toolProxies}\n};`;
   }
 
-  // Execute code in sandbox with MCP tools + PTC runtime tools
+  // Execute code in sandbox with MCP tools + runtime tools
   executeCodeForApiSession(
     code: string,
     sessionId: string,
@@ -166,7 +166,7 @@ ${code}
         output: stdoutText + "\n\n" + stderrText + timeoutText,
       };
     } finally {
-      await Deno.remove(tempFile).catch(() => {});
+      await Deno.remove(tempFile).catch(() => { });
     }
   }
 }

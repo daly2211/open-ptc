@@ -1,6 +1,6 @@
-# LangGraph Integration with Open-CodeMode
+# LangGraph Integration with Open-PTC
 
-Connects a LangGraph ReAct agent to the open-codemode **WebSocket server** for bidirectional tool calling. Your Python functions run locally; the sandbox calls them back through the WebSocket connection.
+Connects a LangGraph ReAct agent to the Open-PTC **WebSocket server** for bidirectional tool calling. Your Python functions run locally; the sandbox calls them back through the WebSocket connection.
 
 ## How It Works
 
@@ -25,7 +25,7 @@ LLM  ──>  code_executor tool  ──>  WS Server  ──>  Deno sandbox
 ## Quick Start
 
 ```bash
-# 1. Start the open-codemode servers
+# 1. Start the Open-PTC servers
 deno task start  # or docker-compose up
 
 # 2. Install Python deps

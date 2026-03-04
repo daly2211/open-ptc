@@ -1,10 +1,10 @@
-import type { PtcSession, PtcTool } from "./types.ts";
+import type { ProxySession, ProxyTool } from "./types.ts";
 
 export class SessionStore {
-  private sessions = new Map<string, PtcSession>();
+  private sessions = new Map<string, ProxySession>();
 
-  create(sessionId: string, runtimeTools: PtcTool[]): PtcSession {
-    const session: PtcSession = {
+  create(sessionId: string, runtimeTools: ProxyTool[]): ProxySession {
+    const session: ProxySession = {
       id: sessionId,
       runtimeTools,
       createdAt: Date.now(),
@@ -13,7 +13,7 @@ export class SessionStore {
     return session;
   }
 
-  get(sessionId: string): PtcSession | undefined {
+  get(sessionId: string): ProxySession | undefined {
     return this.sessions.get(sessionId);
   }
 

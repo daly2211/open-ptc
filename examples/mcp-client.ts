@@ -1,7 +1,7 @@
 /**
  * MCP Client Example
  *
- * Connects to the open-codemode MCP server and demonstrates:
+ * Connects to the open-PTC MCP server and demonstrates:
  *   - Listing available MCP tools
  *   - Browsing the tool tree
  *   - Retrieving TypeScript signatures

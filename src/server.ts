@@ -1,18 +1,18 @@
 /**
- * Open-CodeMode Unified Server
+ * Open-PTC Unified Server
  *
  * Run any combination of services:
  *   --api      REST API for MCP tools (port 9730)
  *   --mcp      MCP Server for external clients (port 9731)
  *   --ws       WebSocket server for bidirectional tool calling (port 9733)
- *   --ptc      PTC-Proxy for programmatic tool calling (port 9734)
+ *   --proxy    Open-PTC Proxy for programmatic tool calling (port 9734)
  *
  * The RPC server (port 9732) is internal-only, used by the sandbox to call tools.
- * It starts automatically when needed (--api, --ws, or --ptc).
+ * It starts automatically when needed (--api, --ws, or --proxy).
  *
  * Usage:
- *   deno run --allow-all src/server.ts --api --ws --ptc
- *   deno run --allow-all src/server.ts --ptc  # Just PTC-Proxy
+ *   deno run --allow-all src/server.ts --api --ws --proxy
+ *   deno run --allow-all src/server.ts --proxy  # Just Open-PTC Proxy
  *   deno run --allow-all src/server.ts         # Everything (default)
  */
 
@@ -21,7 +21,7 @@ import { McpRegistry, type McpServerConfig } from "@/mcp/mcp-registry.ts";
 import { ToolBridge } from "@/bridge/tool-bridge.ts";
 import { CodeExecutionEngine } from "@/execution/sandbox-executor.ts";
 import { WsServer } from "@/servers/ws-server.ts";
-import { PtcProxy } from "@/ptc-proxy/proxy.ts";
+import { Proxy } from "@/proxy/proxy.ts";
 import { McpServer, StreamableHttpTransport } from "mcp-lite";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { z } from "zod";
@@ -31,18 +31,18 @@ const args = Deno.args;
 const enableApi = args.includes("--api") || args.length === 0 || args.includes("--all");
 const enableMcp = args.includes("--mcp") || args.length === 0 || args.includes("--all");
 const enableWs = args.includes("--ws") || args.length === 0 || args.includes("--all");
-const enablePtc = args.includes("--ptc") || args.length === 0 || args.includes("--all");
+const enableProxy = args.includes("--proxy") || args.length === 0 || args.includes("--all");
 
 // Ports
 const RPC_PORT = parseInt(Deno.env.get("RPC_SERVER_PORT") || "9732");
 const API_PORT = parseInt(Deno.env.get("API_SERVER_PORT") || "9730");
 const MCP_PORT = parseInt(Deno.env.get("MCP_SERVER_PORT") || "9731");
 const WS_PORT = parseInt(Deno.env.get("WS_SERVER_PORT") || "9733");
-const PTC_PORT = parseInt(Deno.env.get("PTC_PROXY_PORT") || "9734");
+const PROXY_PORT = parseInt(Deno.env.get("PROXY_PORT") || "9734");
 const LITELLM_URL = Deno.env.get("LITELLM_URL") ?? "http://localhost:4001";
 
 // Determine if RPC is needed
-const needsRpc = enableApi || enableWs || enablePtc;
+const needsRpc = enableApi || enableWs || enableProxy;
 
 function substituteEnvVars<T>(value: T): T {
   if (typeof value === "string") {
@@ -68,6 +68,15 @@ const rawConfig = JSON.parse(
 const serverConfigs: McpServerConfig[] = substituteEnvVars(rawConfig);
 
 // Initialize shared infrastructure
+console.log(`
+ ██████╗ ██████╗ ███████╗███╗   ██╗      ██████╗ ████████╗ ██████╗
+██╔═══██╗██╔══██╗██╔════╝████╗  ██║      ██╔══██╗╚══██╔══╝██╔════╝
+██║   ██║██████╔╝█████╗  ██╔██╗ ██║█████╗██████╔╝   ██║   ██║     
+██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║╚════╝██╔═══╝    ██║   ██║     
+╚██████╔╝██║     ███████╗██║ ╚████║      ██║        ██║   ╚██████╗
+ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝      ╚═╝        ╚═╝    ╚═════╝
+`);
+
 console.log("Initializing MCP registry...");
 const mcpRegistry = await McpRegistry.create(serverConfigs);
 console.log(`Loaded ${mcpRegistry.getAllTools().length} MCP tools`);
@@ -132,7 +141,7 @@ if (enableApi) {
 // MCP Server (for external MCP clients)
 if (enableMcp) {
   const mcpServer = new McpServer({
-    name: "open-codemode",
+    name: "open-PTC",
     version: "1.0.0",
     schemaAdapter: (schema) => zodToJsonSchema(schema as z.ZodType),
   });
@@ -216,28 +225,28 @@ if (enableWs) {
   console.log(`    tool_result     - Return result for tool call`);
 }
 
-// PTC Proxy
-if (enablePtc) {
-  const ptcProxy = new PtcProxy({
+// Open-PTC Proxy
+if (enableProxy) {
+  const proxyInstance = new Proxy({
     litellmUrl: LITELLM_URL,
     toolBridge,
     codeExecutor,
     mcpTools: mcpRegistry.getAllTools(),
   });
 
-  const ptcServer = Deno.serve({ port: PTC_PORT, hostname: "0.0.0.0" }, ptcProxy.createHandler());
-  servers.push(ptcServer);
-  console.log(`[OK] PTC-Proxy on port ${PTC_PORT}`);
+  const proxyServer = Deno.serve({ port: PROXY_PORT, hostname: "0.0.0.0" }, proxyInstance.createHandler());
+  servers.push(proxyServer);
+  console.log(`[OK] Open-PTC Proxy on port ${PROXY_PORT}`);
   console.log(`    POST /v1/responses - Programmatic tool calling`);
   console.log(`    LiteLLM URL: ${LITELLM_URL}`);
 }
 
 // Summary
 console.log("\n" + "=".repeat(50));
-console.log("Open-CodeMode Unified Server running");
+console.log("Open-PTC Unified Server running");
 console.log("=".repeat(50));
-if (!enableApi && !enableMcp && !enableWs && !enablePtc) {
-  console.log("No services enabled. Use --api, --mcp, --ws, --ptc, or run without args for all.");
+if (!enableApi && !enableMcp && !enableWs && !enableProxy) {
+  console.log("No services enabled. Use --api, --mcp, --ws, --proxy, or run without args for all.");
 }
 
 // Cleanup on exit

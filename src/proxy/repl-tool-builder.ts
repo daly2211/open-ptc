@@ -1,10 +1,10 @@
 import { generateFullTsFile } from "@/codegen/signature-generator.ts";
 import type { BaseToolDefinition } from "@/shared/tool-types.ts";
-import type { PtcTool } from "./types.ts";
+import type { ProxyTool } from "./types.ts";
 import type { McpToolDefinition } from "@/mcp/mcp-registry.ts";
 
 export async function buildReplTool(
-  runtimeTools: PtcTool[],
+  runtimeTools: ProxyTool[],
   mcpTools: McpToolDefinition[] = []
 ): Promise<object> {
   // Build tool definitions for runtime tools
@@ -31,7 +31,7 @@ export async function buildReplTool(
 
   // Group runtime tools under "main" namespace
   const allSignatures: string[] = [];
-  
+
   if (runtimeDefs.length > 0) {
     const mainSigs = await generateFullTsFile("main", runtimeDefs);
     allSignatures.push(mainSigs);
@@ -76,7 +76,7 @@ Use await for all function calls. Use console.log() to produce output.`,
   };
 }
 
-export function stripPtcFields(tool: PtcTool): object {
+export function stripProxyFields(tool: ProxyTool): object {
   const { "open-ptc-runtime-function": _, ...rest } = tool;
   return rest;
 }

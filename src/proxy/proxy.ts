@@ -1,5 +1,5 @@
 /**
- * PtcProxy — Thin HTTP routing layer for programmatic tool calling.
+ * Open-PTC Proxy — Thin HTTP routing layer for programmatic tool calling.
  *
  * Delegates to:
  * - LlmClient       for LLM communication
@@ -11,26 +11,26 @@ import { Hono } from "hono";
 import { ToolBridge } from "@/bridge/tool-bridge.ts";
 import { CodeExecutionEngine } from "@/execution/sandbox-executor.ts";
 import type { McpToolDefinition } from "@/mcp/mcp-registry.ts";
-import type { PtcTool } from "./types.ts";
+import type { ProxyTool } from "./types.ts";
 import { LlmClient, forwardHeaders } from "./llm-client.ts";
 import { SandboxOrchestrator } from "./sandbox-orchestrator.ts";
 import { findToolResult, stripInternalFields, categorizeTools, buildLlmTools } from "./proxy-utils.ts";
 import { callToSession } from "./session-store.ts";
 import { log } from "./proxy-logger.ts";
 
-export interface PtcProxyOptions {
+export interface ProxyOptions {
   litellmUrl: string;
   toolBridge: ToolBridge;
   codeExecutor: CodeExecutionEngine;
   mcpTools?: McpToolDefinition[];
 }
 
-export class PtcProxy {
+export class Proxy {
   private llmClient: LlmClient;
   private orchestrator: SandboxOrchestrator;
   private mcpTools: McpToolDefinition[];
 
-  constructor(options: PtcProxyOptions) {
+  constructor(options: ProxyOptions) {
     this.llmClient = new LlmClient(options.litellmUrl);
     this.orchestrator = new SandboxOrchestrator(
       options.toolBridge,
@@ -52,7 +52,7 @@ export class PtcProxy {
       const { input: _ri, tools: _rt, model: _rm, ...requestParams } = body;
 
       const reqHeaders = forwardHeaders(c.req);
-      const rawTools: PtcTool[] = body.tools || [];
+      const rawTools: ProxyTool[] = body.tools || [];
       const categorized = categorizeTools(rawTools);
       const transformedTools = await buildLlmTools(categorized, this.mcpTools);
 

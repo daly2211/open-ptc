@@ -1,5 +1,5 @@
 /**
- * Pure utility functions for PTC-Proxy request/response transformation.
+ * Pure utility functions for Open-PTC Proxy request/response transformation.
  */
 
 import { callToSession } from "./session-store.ts";
@@ -91,19 +91,19 @@ export function filterInternalRuntimeCalls(output: any[], sessionId: string): an
 
 // --- Tool categorization ---
 
-import type { PtcTool } from "./types.ts";
-import { buildReplTool, stripPtcFields } from "./repl-tool-builder.ts";
+import type { ProxyTool } from "./types.ts";
+import { buildReplTool, stripProxyFields } from "./repl-tool-builder.ts";
 import type { McpToolDefinition } from "@/mcp/mcp-registry.ts";
 
 export interface CategorizedTools {
-    runtimeTools: PtcTool[];
-    normalTools: PtcTool[];
+    runtimeTools: ProxyTool[];
+    normalTools: ProxyTool[];
 }
 
 /**
- * Split raw PTC tools into runtime tools (sandbox-only) and normal tools (forwarded to LLM).
+ * Split raw Open-PTC Proxy tools into runtime tools (sandbox-only) and normal tools (forwarded to LLM).
  */
-export function categorizeTools(tools: PtcTool[]): CategorizedTools {
+export function categorizeTools(tools: ProxyTool[]): CategorizedTools {
     return {
         runtimeTools: tools.filter(t => t["open-ptc-runtime-function"]),
         normalTools: tools.filter(t => !t["open-ptc-runtime-function"]),
@@ -122,10 +122,10 @@ export async function buildLlmTools(
 
     if (runtimeTools.length > 0) {
         const replTool = await buildReplTool(runtimeTools, mcpTools);
-        return [...normalTools.map(stripPtcFields), replTool];
+        return [...normalTools.map(stripProxyFields), replTool];
     }
 
-    return normalTools.map(stripPtcFields);
+    return normalTools.map(stripProxyFields);
 }
 
 // --- Formatting ---

@@ -13,7 +13,7 @@ import { CodeExecutionEngine } from "@/execution/sandbox-executor.ts";
 import { LlmClient } from "./llm-client.ts";
 import { sessions, callToSession } from "./session-store.ts";
 import { log } from "./proxy-logger.ts";
-import type { PtcTool, ToolCallEvent } from "./types.ts";
+import type { ProxyTool, ToolCallEvent } from "./types.ts";
 
 const MAX_CHAIN_DEPTH = 10;
 
@@ -21,7 +21,7 @@ const MAX_CHAIN_DEPTH = 10;
 
 export interface ExecuteSandboxParams {
     codeCall: any;
-    runtimeTools: PtcTool[];
+    runtimeTools: ProxyTool[];
     llmResult: any;
     originalInput: any[];
     pendingExecutors: any[];

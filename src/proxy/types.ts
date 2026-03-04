@@ -1,4 +1,4 @@
-export interface PtcTool {
+export interface ProxyTool {
   type: "function";
   name: string;
   description?: string;
@@ -22,9 +22,9 @@ export interface FunctionCallOutput {
   output: string;
 }
 
-export interface PtcSession {
+export interface ProxySession {
   id: string;
-  runtimeTools: PtcTool[];
+  runtimeTools: ProxyTool[];
   createdAt: number;
   pendingExecutors?: any[];
   executorOutputs?: any[];

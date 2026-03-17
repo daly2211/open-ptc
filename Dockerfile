@@ -1,7 +1,6 @@
 # Use official Deno image
 FROM denoland/deno:latest
 
-# Set working directory
 WORKDIR /app
 
 # Copy dependency files first for better caching
@@ -12,21 +11,10 @@ COPY src/ src/
 COPY mcp_config.json .
 
 # Cache dependencies
-RUN deno cache src/servers/api-server.ts src/servers/mcp-server.ts src/servers/ws-server.ts
+RUN deno cache src/server.ts
 
-# Create a startup script to run all servers
-RUN echo '#!/bin/sh\n\
-deno run --allow-all src/servers/api-server.ts &\n\
-API_PID=$!\n\
-deno run --allow-all src/servers/mcp-server.ts &\n\
-MCP_PID=$!\n\
-deno run --allow-all src/servers/ws-server.ts &\n\
-WS_PID=$!\n\
-echo "Started API Server (PID: $API_PID), MCP Server (PID: $MCP_PID), WS Server (PID: $WS_PID)"\n\
-wait $API_PID $MCP_PID $WS_PID' > /app/start.sh && chmod +x /app/start.sh
+# Expose ports (RPC 9732 is internal-only, not exposed)
+EXPOSE 9730 9731 9733 9734
 
-# Expose ports
-EXPOSE 9730 9731 9733
-
-# Start all servers
-CMD ["/app/start.sh"]
+# Start unified server (runs all services by default)
+CMD ["run", "--allow-all", "src/server.ts"]

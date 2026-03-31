@@ -17,10 +17,36 @@ function addIndentation(str: string, indent: number = 2): string {
 function findMatchingBrace(code: string, openIndex: number): number {
   let depth = 0;
   let inString = false;
+  let inLineComment = false;
+  let inBlockComment = false;
   let stringChar = "";
   for (let i = openIndex; i < code.length; i++) {
     const ch = code[i];
     const prev = code[i - 1];
+    const next = code[i + 1];
+
+    if (inLineComment) {
+      if (ch === "\n") inLineComment = false;
+      continue;
+    }
+
+    if (inBlockComment) {
+      if (prev === "*" && ch === "/") inBlockComment = false;
+      continue;
+    }
+
+    if (!inString && ch === "/" && next === "/") {
+      inLineComment = true;
+      i++;
+      continue;
+    }
+
+    if (!inString && ch === "/" && next === "*") {
+      inBlockComment = true;
+      i++;
+      continue;
+    }
+
     if ((ch === '"' || ch === "'" || ch === "`") && prev !== "\\") {
       if (!inString) {
         inString = true;
@@ -41,7 +67,10 @@ function findMatchingBrace(code: string, openIndex: number): number {
 
 // Extracts inline type definition from generated TypeScript interface code
 function extractInlineType(code: string): string {
-  const start = code.indexOf("{");
+  const interfaceMatch = code.match(/export\s+interface\s+\w+\s*\{/);
+  const start = interfaceMatch
+    ? interfaceMatch.index! + interfaceMatch[0].lastIndexOf("{")
+    : code.indexOf("{");
   const end = findMatchingBrace(code, start);
   if (start === -1 || end === -1) throw new Error("Malformed interface");
   let body = code.slice(start + 1, end);

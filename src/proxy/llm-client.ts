@@ -5,7 +5,7 @@
 import { log } from "./proxy-logger.ts";
 
 export interface LlmChatRequest {
-    input: unknown[];
+    input: unknown;
     tools: unknown[];
     model?: string;
     extraParams?: Record<string, unknown>;
@@ -39,8 +39,12 @@ export class LlmClient {
             body.model = request.model;
         }
 
-        log.debug("LLM request — input items:", request.input.length);
-        log.debug("LLM request — input types:", (request.input as any[]).map((i: any) => i.type).join(", "));
+        if (Array.isArray(request.input)) {
+            log.debug("LLM request — input items:", request.input.length);
+            log.debug("LLM request — input types:", request.input.map((i: any) => i?.type || typeof i).join(", "));
+        } else {
+            log.debug("LLM request — input kind:", typeof request.input);
+        }
         log.trace("LLM request body:", body);
 
         const response = await fetch(`${this.baseUrl}/v1/responses`, {

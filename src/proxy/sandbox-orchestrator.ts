@@ -16,6 +16,7 @@ import { log } from "./proxy-logger.ts";
 import type { ProxyTool, ToolCallEvent } from "./types.ts";
 
 const MAX_CHAIN_DEPTH = 10;
+const TOOL_CALL_BATCH_WINDOW_MS = parseInt(Deno.env.get("TOOL_CALL_BATCH_WINDOW_MS") || "10");
 
 // --- Parameter types ---
 
@@ -34,7 +35,7 @@ export interface ExecuteSandboxParams {
 }
 
 export interface ResumeAfterToolResultParams {
-    toolResult: { call_id: string; output?: string; error?: string };
+    toolResults: Array<{ call_id: string; output?: string; error?: string }>;
     cleanInput: any[];
     model?: string;
     tools?: any[];
@@ -45,7 +46,8 @@ export interface ResumeAfterToolResultParams {
 // --- Orchestrator ---
 
 export class SandboxOrchestrator {
-    private toolCallResolvers = new Map<string, (event: ToolCallEvent) => void>();
+    private toolCallWaiters = new Map<string, () => void>();
+    private toolCallQueues = new Map<string, ToolCallEvent[]>();
     private executionPromises = new Map<string, Promise<{ success: boolean; output: string }>>();
 
     constructor(
@@ -55,10 +57,14 @@ export class SandboxOrchestrator {
     ) {
         // Wire up the tool-bridge callback so that sandbox tool calls get resolved
         this.toolBridge.configureApiMode((callId: string, toolName: string, args: unknown, sessionId: string) => {
-            const resolver = this.toolCallResolvers.get(sessionId);
-            if (resolver) {
-                this.toolCallResolvers.delete(sessionId);
-                resolver({ callId, toolName, args });
+            const queue = this.toolCallQueues.get(sessionId) || [];
+            queue.push({ callId, toolName, args });
+            this.toolCallQueues.set(sessionId, queue);
+
+            const waiter = this.toolCallWaiters.get(sessionId);
+            if (waiter) {
+                this.toolCallWaiters.delete(sessionId);
+                waiter();
             }
         });
     }
@@ -107,8 +113,8 @@ export class SandboxOrchestrator {
         const raceResult = await this.raceExecution(sessionId, execPromise);
 
         // --- Tool-call interrupt ---
-        if (raceResult.type === "tool_call") {
-            return this.buildToolCallResponse(raceResult.event, codeCall, llmResult, chainOutputs);
+        if (raceResult.type === "tool_calls") {
+            return this.buildToolCallResponse(raceResult.events, codeCall, llmResult, chainOutputs);
         }
 
         // --- Sandbox completed ---
@@ -210,18 +216,30 @@ export class SandboxOrchestrator {
     // --- Resume after client fulfils a runtime tool call ---
 
     async resumeAfterToolResult(params: ResumeAfterToolResultParams): Promise<any> {
-        const { toolResult, cleanInput, model, tools = [], requestParams = {}, reqHeaders } = params;
-        const { call_id, output, error } = toolResult;
+        const { toolResults, cleanInput, model, tools = [], requestParams = {}, reqHeaders } = params;
 
-        log.info("Handling tool result for call:", call_id?.slice(0, 12));
-        log.debug("Output preview:", output?.slice(0, 50));
-
-        const sessionId = callToSession.get(call_id);
-        if (!sessionId) {
-            log.error("Unknown call_id:", call_id);
-            return { error: "Unknown or expired call_id", _status: 400 };
+        if (!Array.isArray(toolResults) || toolResults.length === 0) {
+            return { error: "No tool results provided", _status: 400 };
         }
 
+        log.info("Handling tool results count:", toolResults.length);
+        log.debug("Call ids:", toolResults.map(r => r.call_id?.slice(0, 12)).join(", "));
+
+        const sessionIds = new Set<string>();
+        for (const result of toolResults) {
+            const sessionId = callToSession.get(result.call_id);
+            if (!sessionId) {
+                log.error("Unknown call_id:", result.call_id);
+                return { error: `Unknown or expired call_id: ${result.call_id}`, _status: 400 };
+            }
+            sessionIds.add(sessionId);
+        }
+
+        if (sessionIds.size !== 1) {
+            return { error: "All tool results in one request must belong to the same session", _status: 400 };
+        }
+
+        const sessionId = [...sessionIds][0];
         const session = sessions.get(sessionId);
         if (!session) {
             log.error("Session expired for:", sessionId);
@@ -230,18 +248,20 @@ export class SandboxOrchestrator {
 
         log.debug("Session:", sessionId?.slice(0, 12));
 
-        // Resolve the pending tool call in the sandbox
-        const resolved = this.toolBridge.resolveApiToolCall(
-            call_id,
-            output ? JSON.parse(output) : undefined,
-            error
-        );
+        // Resolve all pending tool calls in the sandbox for this session
+        for (const result of toolResults) {
+            const resolved = this.toolBridge.resolveApiToolCall(
+                result.call_id,
+                this.parseToolResultOutput(result.output),
+                result.error
+            );
 
-        if (!resolved) {
-            return { error: "Failed to resolve tool call", _status: 500 };
+            if (!resolved) {
+                return { error: `Failed to resolve tool call: ${result.call_id}`, _status: 500 };
+            }
+
+            callToSession.delete(result.call_id);
         }
-
-        callToSession.delete(call_id);
 
         const execPromise = this.executionPromises.get(sessionId);
         if (!execPromise) {
@@ -252,24 +272,25 @@ export class SandboxOrchestrator {
         const raceResult = await this.raceExecution(sessionId, execPromise);
 
         // --- Another tool-call interrupt ---
-        if (raceResult.type === "tool_call") {
-            const { callId, toolName, args } = raceResult.event;
-            callToSession.set(callId, sessionId);
+        if (raceResult.type === "tool_calls") {
+            const output = raceResult.events.map(({ callId, toolName, args }) => {
+                callToSession.set(callId, sessionId);
+                return {
+                    type: "function_call",
+                    id: `fc_${callId}`,
+                    call_id: callId,
+                    name: toolName,
+                    arguments: JSON.stringify(args),
+                    caller: { call_id: sessionId },
+                };
+            });
 
-            log.info("Sandbox blocked again, returning tool call:", toolName);
+            log.info(
+                "Sandbox blocked again, returning tool calls:",
+                output.map((o: any) => o.name).join(", "),
+            );
 
-            return {
-                output: [
-                    {
-                        type: "function_call",
-                        id: `fc_${callId}`,
-                        call_id: callId,
-                        name: toolName,
-                        arguments: JSON.stringify(args),
-                        caller: { call_id: sessionId },
-                    },
-                ],
-            };
+            return { output };
         }
 
         // --- Sandbox completed ---
@@ -313,7 +334,6 @@ export class SandboxOrchestrator {
         }
 
         const savedRuntimeTools = session.runtimeTools;
-        const savedChainOutputs = session.chainOutputs || [];
         this.cleanup(sessionId);
 
         // Continue with LLM
@@ -361,41 +381,74 @@ export class SandboxOrchestrator {
 
     // --- Private helpers ---
 
-    private async raceExecution(
+    private raceExecution(
         sessionId: string,
         execPromise: Promise<{ success: boolean; output: string }>,
     ): Promise<
         | { type: "completed"; result: { success: boolean; output: string } }
-        | { type: "tool_call"; event: ToolCallEvent }
+        | { type: "tool_calls"; events: ToolCallEvent[] }
     > {
-        const toolCallPromise = new Promise<ToolCallEvent>(resolve => {
-            this.toolCallResolvers.set(sessionId, resolve);
-        });
+        const toolCallPromise = this.waitForToolCallBatch(sessionId).then(events => ({
+            type: "tool_calls" as const,
+            events,
+        }));
 
         return Promise.race([
             execPromise.then(r => ({ type: "completed" as const, result: r })),
-            toolCallPromise.then(e => ({ type: "tool_call" as const, event: e })),
+            toolCallPromise,
         ]);
     }
 
-    private buildToolCallResponse(event: ToolCallEvent, codeCall: any, llmResult: any, chainOutputs: any[]): any {
-        const { callId, toolName, args } = event;
-        callToSession.set(callId, codeCall.call_id);
+    private async waitForToolCallBatch(sessionId: string): Promise<ToolCallEvent[]> {
+        if (this.hasQueuedToolCalls(sessionId)) {
+            await this.delayBatchWindow();
+            return this.drainToolCallQueue(sessionId);
+        }
 
-        log.info("Sandbox blocked, returning runtime tool call:", toolName);
+        await new Promise<void>(resolve => {
+            this.toolCallWaiters.set(sessionId, resolve);
+        });
 
-        const originalOutput = llmResult.output || [];
-        const newOutput = [
-            ...chainOutputs,
-            ...originalOutput,
-            {
+        await this.delayBatchWindow();
+        return this.drainToolCallQueue(sessionId);
+    }
+
+    private hasQueuedToolCalls(sessionId: string): boolean {
+        const queue = this.toolCallQueues.get(sessionId);
+        return Boolean(queue && queue.length > 0);
+    }
+
+    private async delayBatchWindow(): Promise<void> {
+        if (TOOL_CALL_BATCH_WINDOW_MS <= 0) return;
+        await new Promise(resolve => setTimeout(resolve, TOOL_CALL_BATCH_WINDOW_MS));
+    }
+
+    private drainToolCallQueue(sessionId: string): ToolCallEvent[] {
+        const queue = this.toolCallQueues.get(sessionId) || [];
+        this.toolCallQueues.delete(sessionId);
+        return queue;
+    }
+
+    private buildToolCallResponse(events: ToolCallEvent[], codeCall: any, llmResult: any, chainOutputs: any[]): any {
+        const runtimeCalls = events.map(({ callId, toolName, args }) => {
+            callToSession.set(callId, codeCall.call_id);
+            return {
                 type: "function_call",
                 id: `fc_${callId}`,
                 call_id: callId,
                 name: toolName,
                 arguments: JSON.stringify(args),
                 caller: { call_id: codeCall.call_id },
-            },
+            };
+        });
+
+        log.info("Sandbox blocked, returning runtime tool calls:", runtimeCalls.map((c: any) => c.name).join(", "));
+
+        const originalOutput = llmResult.output || [];
+        const newOutput = [
+            ...chainOutputs,
+            ...originalOutput,
+            ...runtimeCalls,
         ];
 
         const response = { ...llmResult, output: newOutput };
@@ -403,10 +456,20 @@ export class SandboxOrchestrator {
         return response;
     }
 
+    private parseToolResultOutput(output?: string): unknown {
+        if (output === undefined) return undefined;
+        try {
+            return JSON.parse(output);
+        } catch {
+            return output;
+        }
+    }
+
     private cleanup(sessionId: string): void {
         this.toolBridge.unregisterApiTools(sessionId);
         sessions.delete(sessionId);
         this.executionPromises.delete(sessionId);
-        this.toolCallResolvers.delete(sessionId);
+        this.toolCallWaiters.delete(sessionId);
+        this.toolCallQueues.delete(sessionId);
     }
 }

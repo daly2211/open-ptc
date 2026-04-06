@@ -11,10 +11,18 @@ import { log } from "./proxy-logger.ts";
  * Find a pending runtime tool result in the input.
  * Only matches function_call_output items whose call_id is tracked in callToSession.
  */
-export function findToolResult(input: any[]): any | null {
-    return input?.find(
+export function findToolResults(input: any[]): any[] {
+    return input?.filter(
         (item: any) => item.type === "function_call_output" && callToSession.has(item.call_id)
-    ) || null;
+    ) || [];
+}
+
+/**
+ * Find the first pending runtime tool result in the input.
+ * Kept for compatibility with older code paths.
+ */
+export function findToolResult(input: any[]): any | null {
+    return findToolResults(input)[0] || null;
 }
 
 /**

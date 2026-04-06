@@ -14,8 +14,7 @@ import type { McpToolDefinition } from "@/mcp/mcp-registry.ts";
 import type { ProxyTool } from "./types.ts";
 import { LlmClient, forwardHeaders } from "./llm-client.ts";
 import { SandboxOrchestrator } from "./sandbox-orchestrator.ts";
-import { findToolResult, stripInternalFields, categorizeTools, buildLlmTools } from "./proxy-utils.ts";
-import { callToSession } from "./session-store.ts";
+import { findToolResults, stripInternalFields, categorizeTools, buildLlmTools } from "./proxy-utils.ts";
 import { log } from "./proxy-logger.ts";
 
 export interface ProxyOptions {
@@ -57,13 +56,16 @@ export class Proxy {
       const transformedTools = await buildLlmTools(categorized, this.mcpTools);
 
       // --- Path A: Client is returning a runtime tool result ---
-      const toolResult = findToolResult(body.input);
-      if (toolResult && callToSession.has(toolResult.call_id)) {
-        log.debug("Tool result found for call:", toolResult.call_id?.slice(0, 8));
+      const toolResults = findToolResults(body.input);
+      if (toolResults.length > 0) {
+        log.debug(
+          "Tool results found for calls:",
+          toolResults.map((r: any) => r.call_id?.slice(0, 8)).join(", "),
+        );
 
         const cleanInput = stripInternalFields(body.input);
         const result = await this.orchestrator.resumeAfterToolResult({
-          toolResult,
+          toolResults,
           cleanInput,
           model: body.model,
           tools: transformedTools,

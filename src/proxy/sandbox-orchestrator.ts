@@ -10,7 +10,7 @@
 
 import { ToolBridge } from "@/bridge/tool-bridge.ts";
 import { CodeExecutionEngine } from "@/execution/sandbox-executor.ts";
-import { LlmClient } from "./llm-client.ts";
+import { LlmClient, type LlmBackendMode } from "./llm-client.ts";
 import { sessions, callToSession } from "./session-store.ts";
 import { log } from "./proxy-logger.ts";
 import type { ProxyTool, ToolCallEvent } from "./types.ts";
@@ -31,6 +31,7 @@ export interface ExecuteSandboxParams {
     requestParams?: Record<string, unknown>;
     chainOutputs?: any[];
     reqHeaders: Headers;
+    llmMode?: LlmBackendMode;
 }
 
 export interface ResumeAfterToolResultParams {
@@ -40,6 +41,7 @@ export interface ResumeAfterToolResultParams {
     tools?: any[];
     requestParams?: Record<string, unknown>;
     reqHeaders: Headers;
+    llmMode?: LlmBackendMode;
 }
 
 // --- Orchestrator ---
@@ -78,6 +80,7 @@ export class SandboxOrchestrator {
             requestParams = {},
             chainOutputs = [],
             reqHeaders,
+            llmMode = "responses",
         } = params;
 
         const sessionId = codeCall.call_id;
@@ -97,6 +100,7 @@ export class SandboxOrchestrator {
         session.pendingExecutors = pendingExecutors;
         session.executorOutputs = executorOutputs;
         session.chainOutputs = [...chainOutputs, ...(llmResult.output || [])];
+        session.requestParams = requestParams;
         this.toolBridge.registerApiTools(sessionId, runtimeTools);
 
         // Start sandbox execution
@@ -171,6 +175,7 @@ export class SandboxOrchestrator {
         const finalResult = await this.llmClient.chat(
             { input: llmInput, tools, model: llmResult.model, extraParams: requestParams },
             reqHeaders,
+            llmMode,
         );
 
         // Check for chaining (LLM wants another code_executor call)
@@ -196,6 +201,7 @@ export class SandboxOrchestrator {
                 requestParams,
                 chainOutputs: [...chainOutputs, ...intermediateItems, ...allOutputs],
                 reqHeaders,
+                llmMode,
             });
         }
 
@@ -210,7 +216,7 @@ export class SandboxOrchestrator {
     // --- Resume after client fulfils a runtime tool call ---
 
     async resumeAfterToolResult(params: ResumeAfterToolResultParams): Promise<any> {
-        const { toolResult, cleanInput, model, tools = [], requestParams = {}, reqHeaders } = params;
+        const { toolResult, cleanInput, model, tools = [], requestParams = {}, reqHeaders, llmMode = "responses" } = params;
         const { call_id, output, error } = toolResult;
 
         log.info("Handling tool result for call:", call_id?.slice(0, 12));
@@ -227,6 +233,10 @@ export class SandboxOrchestrator {
             log.error("Session expired for:", sessionId);
             return { error: "Session expired", _status: 400 };
         }
+
+        const effectiveRequestParams = Object.keys(requestParams).length > 0
+            ? requestParams
+            : (session.requestParams ?? {});
 
         log.debug("Session:", sessionId?.slice(0, 12));
 
@@ -306,9 +316,10 @@ export class SandboxOrchestrator {
                 executorOutputs: allOutputs,
                 tools,
                 chainDepth: 0,
-                requestParams,
+                requestParams: effectiveRequestParams,
                 chainOutputs: savedChainOutputs,
                 reqHeaders,
+                llmMode,
             });
         }
 
@@ -320,8 +331,9 @@ export class SandboxOrchestrator {
         const llmInput = [...cleanInput, ...allOutputs];
 
         const finalResult = await this.llmClient.chat(
-            { input: llmInput, tools, model, extraParams: requestParams },
+            { input: llmInput, tools, model, extraParams: effectiveRequestParams },
             reqHeaders,
+            llmMode,
         );
 
         // Check for chaining
@@ -344,9 +356,10 @@ export class SandboxOrchestrator {
                 executorOutputs: [],
                 tools,
                 chainDepth: 0,
-                requestParams,
+                requestParams: effectiveRequestParams,
                 chainOutputs: allOutputs,
                 reqHeaders,
+                llmMode,
             });
         }
 

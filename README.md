@@ -61,6 +61,7 @@ docker-compose up -d
 curl http://localhost:9730/tree
 curl http://localhost:9731
 curl http://localhost:9734/v1/responses
+curl http://localhost:9734/v1/chat/completions
 ```
 
 ## How to start using it
@@ -78,6 +79,12 @@ curl http://localhost:9734/v1/responses
 - **WebSocket mode**: register local functions and let sandbox code call back into your app.
 - **Proxy mode**: use OpenAI-compatible clients with runtime tools marked by `"open-ptc-runtime-function": true`.
 
+Proxy endpoint behavior:
+
+- `POST /v1/responses`: Native OpenAI Responses-style orchestration path.
+- `POST /v1/chat/completions`: Translated into the same orchestration path (currently `stream: true` is rejected).
+- `POST /v1/completions`: Direct passthrough to downstream LiteLLM `/v1/completions`.
+
 ### 3) Run examples
 
 ```bash
@@ -85,6 +92,7 @@ deno run --allow-all examples/api-client.ts
 deno run --allow-all examples/ws-client.ts
 deno run --allow-net --allow-env examples/proxy-client.ts
 deno run --allow-net --allow-env examples/proxy-sdk-client.ts
+deno run --allow-net --allow-env examples/proxy-sdk-client-completions.ts
 deno run --allow-all examples/mcp-client.ts
 ```
 

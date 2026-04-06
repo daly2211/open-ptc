@@ -29,6 +29,7 @@ export interface ProxySession {
   pendingExecutors?: any[];
   executorOutputs?: any[];
   chainOutputs?: any[];
+  requestParams?: Record<string, unknown>;
 }
 
 export interface ToolCallEvent {

@@ -237,7 +237,9 @@ if (enableProxy) {
   const proxyServer = Deno.serve({ port: PROXY_PORT, hostname: "0.0.0.0" }, proxyInstance.createHandler());
   servers.push(proxyServer);
   console.log(`[OK] Open-PTC Proxy on port ${PROXY_PORT}`);
-  console.log(`    POST /v1/responses - Programmatic tool calling`);
+  console.log(`    POST /v1/responses        - Programmatic tool calling (native Responses API)`);
+  console.log(`    POST /v1/chat/completions - OpenAI chat translation (stream=false only)`);
+  console.log(`    POST /v1/completions      - Direct downstream passthrough`);
   console.log(`    LiteLLM URL: ${LITELLM_URL}`);
 }
 

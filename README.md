@@ -300,4 +300,3 @@ Planned/high-value next steps:
 - src/proxy/repl-tool-builder.ts: code_executor construction with signatures
 
 
-## License

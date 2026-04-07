@@ -1,0 +1,28 @@
+{
+  "name": "open-codemode-ai-sdk-example",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Vercel AI SDK agent with open-codemode REPL tool",
+  "scripts": {
+    "start": "tsx example.ts",
+    "dev": "tsx --watch example.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^2.0.0",
+    "@ai-sdk/azure": "^2.0.0",
+    "@ai-sdk/groq": "^3.0.22",
+    "@ai-sdk/openai": "^2.0.0",
+    "ai": "^6.0.0",
+    "dotenv": "^16.4.0",
+    "ws": "^8.18.0",
+    "zod": "^3.24.0",
+    "zod-to-json-schema": "^3.25.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

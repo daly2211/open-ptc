@@ -345,8 +345,8 @@ class _WsBridge:
         if resp.get("success"):
             log.debug("execute_code [%s] succeeded: %s", exec_id, resp.get("output", "")[:200])
             return resp.get("output", "")
-        log.warning("execute_code [%s] failed: %s", exec_id, resp.get("error", "Unknown error"))
-        return f"Execution failed: {resp.get('error', 'Unknown error')}"
+        log.warning("execute_code [%s] failed: %s", exec_id, resp.get("output", "Unknown error"))
+        return f"Execution failed: {resp.get('output', 'Unknown error')}"
 
     # -- WebSocket callbacks --------------------------------------------------
 

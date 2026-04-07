@@ -135,7 +135,7 @@ class WsBridge {
           if (msg.success) {
             resolve((msg.output as string) ?? "");
           } else {
-            resolve(`Execution failed: ${msg.error ?? "Unknown error"}`);
+            resolve(`Execution failed: ${msg.output ?? "Unknown error"}`);
           }
         },
         reject: (err: Error) => {

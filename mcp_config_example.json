@@ -1,0 +1,162 @@
+[
+  {
+    "name": "tavily",
+    "transport": {
+      "type": "http",
+      "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=${TAVILY_API_KEY}"
+    },
+    "tools": [
+      {
+        "name": "tavily_extract",
+        "output_schema": {
+          "type": "object",
+          "description": "Extracted page content for one or more URLs. Observed from live sample response.",
+          "properties": {
+            "results": {
+              "type": "array",
+              "description": "Successfully extracted pages.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "url": { "type": "string", "description": "The URL that was extracted." },
+                  "title": { "type": "string", "description": "Page title." },
+                  "raw_content": { "type": "string", "description": "Full page content in the requested format (markdown or text)." },
+                  "images": {
+                    "type": "array",
+                    "description": "Images found on the page, present when include_images is true.",
+                    "items": { "type": "string" }
+                  },
+                  "favicon": {
+                    "oneOf": [{ "type": "null" }, { "type": "string" }],
+                    "description": "Favicon URL, present when include_favicon is true."
+                  }
+                },
+                "required": ["url", "raw_content"]
+              }
+            },
+            "failed_results": {
+              "type": "array",
+              "description": "URLs that could not be extracted, with error details.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "url": { "type": "string" },
+                  "error": { "type": "string" }
+                }
+              }
+            },
+            "response_time": {
+              "type": "number",
+              "description": "Server-side processing time in seconds."
+            },
+            "request_id": {
+              "type": "string",
+              "description": "Unique identifier for the request."
+            }
+          },
+          "required": ["results", "failed_results", "response_time", "request_id"]
+        }
+      },
+      {
+        "name": "tavily_crawl",
+        "output_schema": {
+          "type": "object",
+          "description": "Content extracted from pages discovered by crawling a website. Observed from live sample response.",
+          "properties": {
+            "base_url": {
+              "type": "string",
+              "description": "The root URL the crawl started from."
+            },
+            "results": {
+              "type": "array",
+              "description": "Pages visited and their extracted content.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "url": { "type": "string", "description": "URL of the crawled page." },
+                  "raw_content": { "type": "string", "description": "Extracted page content in the requested format." },
+                  "favicon": {
+                    "oneOf": [{ "type": "null" }, { "type": "string" }],
+                    "description": "Favicon URL, present when include_favicon is true."
+                  }
+                },
+                "required": ["url", "raw_content"]
+              }
+            },
+            "response_time": {
+              "type": "number",
+              "description": "Server-side processing time in seconds."
+            },
+            "request_id": {
+              "type": "string",
+              "description": "Unique identifier for the request."
+            }
+          },
+          "required": ["base_url", "results", "response_time", "request_id"]
+        }
+      },
+      {
+        "name": "tavily_map",
+        "output_schema": {
+          "type": "object",
+          "description": "URL graph of a website's structure starting from a root URL. Observed from live sample response.",
+          "properties": {
+            "base_url": {
+              "type": "string",
+              "description": "The root URL the mapping started from."
+            },
+            "results": {
+              "type": "array",
+              "description": "Flat list of all discovered URLs within the crawl scope.",
+              "items": { "type": "string" }
+            },
+            "response_time": {
+              "type": "number",
+              "description": "Server-side processing time in seconds."
+            },
+            "request_id": {
+              "type": "string",
+              "description": "Unique identifier for the request."
+            }
+          },
+          "required": ["base_url", "results", "response_time", "request_id"]
+        }
+      },
+      {
+        "name": "tavily_research",
+        "output_schema": {
+          "type": "object",
+          "description": "A synthesized research report on a topic gathered from multiple sources. Schema inferred from API documentation and type signatures — no live sample was collected to avoid costly execution.",
+          "properties": {
+            "research_id": {
+              "type": "string",
+              "description": "Unique identifier for the research task."
+            },
+            "answer": {
+              "type": "string",
+              "description": "The full synthesized research response in markdown."
+            },
+            "sources": {
+              "type": "array",
+              "description": "List of sources consulted during research.",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "url": { "type": "string" },
+                  "title": { "type": "string" },
+                  "content": { "type": "string" }
+                }
+              }
+            },
+            "response_time": {
+              "type": "number",
+              "description": "Server-side processing time in seconds. Assumed present based on other Tavily tool outputs."
+            }
+          },
+          "required": ["answer"],
+          "additionalProperties": true
+        }
+      }
+    ]
+  }
+]

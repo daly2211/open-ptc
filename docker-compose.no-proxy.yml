@@ -1,0 +1,23 @@
+services:
+  open-ptc:
+    build: .
+    container_name: open-ptc-no-proxy
+    ports:
+      - "9730:9730"  # API Server
+      - "9731:9731"  # MCP Server
+      - "9733:9733"  # WebSocket Server
+      # RPC Server (9732) is internal-only, not exposed
+    environment:
+      - API_SERVER_PORT=9730
+      - MCP_SERVER_PORT=9731
+      - RPC_SERVER_PORT=9732
+      - WS_SERVER_PORT=9733
+      - RPC_SERVER_URL=http://localhost:9732
+      - API_BASE_URL=http://localhost:9730
+      - CODE_EXECUTION_TIMEOUT_MS=30000
+    volumes:
+      - ./mcp_config.json:/app/mcp_config.json:ro
+    env_file:
+      - .env
+    command: ["run", "--allow-all", "src/server.ts", "--api", "--mcp", "--ws"]
+    restart: unless-stopped

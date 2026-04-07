@@ -70,20 +70,29 @@ def calculate(a: float, b: float, operation: str) -> float:
 # -- Agent setup & run --------------------------------------------------------
 
 if __name__ == "__main__":
-    model = init_chat_model(
-        model=os.getenv("MODEL_NAME", "gpt-4"),
-        model_provider=os.getenv("MODEL_PROVIDER", "openai"),
-        temperature=0,
-    )
+    model_kwargs = {
+        "model": os.getenv("MODEL_NAME", "gpt-4"),
+        "model_provider": os.getenv("MODEL_PROVIDER", "openai"),
+        "temperature": 0,
+    }
+
+
+    if base_url := os.getenv("BASE_URL"):
+        model_kwargs["base_url"] = base_url
+    if api_key := os.getenv("API_KEY"):
+        model_kwargs["api_key"] = api_key
+
+    model = init_chat_model(**model_kwargs)
 
     agent = create_agent(
         model,
         tools=[repl_tool([get_temperature, convert_temp, calculate], ws_url=WS_URL)],
+        debug=True
     )
 
     result = agent.invoke(
         {"messages": [("user", "What's the temperature in NYC in Celsius?")]},
         config={"recursion_limit": 10},
     )
-
     print(result["messages"][-1].content)
+

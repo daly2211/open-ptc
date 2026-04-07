@@ -8,7 +8,7 @@
  * This is the TypeScript equivalent of the Python LangGraph example.
  *
  * Prerequisites:
- *   1. Start the servers:  deno task start  (or docker-compose up)
+ *   1. Start the servers:  deno run --allow-all src/server.ts  (or docker compose up)
  *   2. Set API_KEY (or OPENAI_API_KEY) in .env
  *   3. npm install
  *
@@ -178,7 +178,7 @@ async function main() {
 main().catch((err) => {
   console.error("\nError:", err instanceof Error ? err.message : String(err));
   console.error("\nMake sure:");
-  console.error("  1. The Open-PTC servers are running (deno task start)");
+  console.error("  1. The Open-PTC servers are running (deno run --allow-all src/server.ts)");
   console.error("  2. API_KEY or OPENAI_API_KEY is set in .env");
   console.error("  3. MODEL_API is set to chat when using OpenAI-compatible proxy endpoints");
   process.exit(1);

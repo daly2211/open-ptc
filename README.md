@@ -42,10 +42,12 @@ High-level runtime flow depending on the integration mode:
 The client interacts with Open-PTC to discover tools and submit a TypeScript snippet. Open-PTC executes the code in a restricted Deno subprocess, directly invoking external MCP tools, and returns the final result to the client.
 
 **2. WebSocket Mode (Local Tool Callbacks)**
-Similar to the API mode, but the executing code can also call tools registered by the client. When a local tool is invoked, execution pauses, Open-PTC emits a `function_call` via WebSocket to your app, your app processes it and returns `function_call_output`, and the sandbox resumes (see `examples/ai-sdk/example.ts` and `examples/langgraph/example.py` for reference).
+Similar to the API mode, but the executing code can also call tools registered by the client. When a local tool is invoked, execution pauses, Open-PTC emits a `tool_call` via WebSocket to your app, your app processes it and returns `tool_result`, and the sandbox resumes (see [AI SDK example guide](examples/ai-sdk/README.md) and [LangGraph example guide](examples/langgraph/README.md)).
 
 **3. Proxy Mode (OpenAI-compatible Orchestration)**
 Your LLM app sends a standard chat completion request to Open-PTC's proxy. Open-PTC automatically injects a `code_executor` tool into the request. If the LLM uses the `code_executor`, Open-PTC intercepts it, runs the sandbox, handles all the tooling (including local function callbacks as normal tool calls), and eventually returns the final LLM response back to your client as if it successfully handled it all in one go.
+
+For a client-first integration walkthrough, see the [Proxy client guide](examples/proxy/README.md).
 
 ## Integration Modes
 
@@ -87,7 +89,7 @@ Your LLM app sends a standard chat completion request to Open-PTC's proxy. Open-
 
 Important:
 
-- Open-PTC currently orchestrates runtime tools through /v1/responses through a LiteLLM endpoint by default, for easy integration.
+- Open-PTC currently orchestrates runtime tools via /v1/responses and forwards model requests to LiteLLM by default, for easy integration.
 
 ## Run Open-PTC
 
@@ -208,6 +210,12 @@ This is optional but recommended, because it improves generated function signatu
 
 All examples assume Open-PTC is already running in the required mode.
 
+Detailed guides:
+
+- [AI SDK WebSocket guide](examples/ai-sdk/README.md)
+- [LangGraph WebSocket guide](examples/langgraph/README.md)
+- [Proxy client guide](examples/proxy/README.md)
+
 ### API client (MCP tools only, no local tools)
 
 ```bash
@@ -222,7 +230,7 @@ deno run --allow-all examples/mcp-client.ts
 
 ### WebSocket clients (local tool callbacks)
 
-Simple WebSocket client that registers a local tool and receives function_call events when the sandbox invokes it:
+Simple WebSocket client that registers a local tool and receives tool_call events when the sandbox invokes it:
 ```bash
 deno run --allow-all examples/ws-client.ts
 ```

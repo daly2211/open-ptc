@@ -6,7 +6,7 @@ and creates an agent that executes TypeScript in a sandbox — calling your
 functions back over the WebSocket connection.
 
 Prerequisites:
-    1. Start the servers:  deno task start  (or docker-compose up)
+    1. Start the servers:  deno run --allow-all src/server.ts  (or docker compose up)
     2. Set OPENAI_API_KEY (or your provider's key) in .env
     3. pip install -r requirements.txt
 """

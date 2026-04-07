@@ -26,7 +26,7 @@ LLM  ──>  code_executor tool  ──>  WS Server  ──>  Deno sandbox
 
 ```bash
 # 1. Start the Open-PTC servers
-deno task start  # or docker-compose up
+deno run --allow-all src/server.ts  # or docker compose up
 
 # 2. Install Python deps
 cd examples/langgraph

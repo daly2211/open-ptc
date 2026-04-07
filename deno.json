@@ -21,7 +21,7 @@
     }
   },
   "tasks": {
-    "start": "run --allow-net --allow-write ./mod.ts",
-    "dev": "run --allow-net --allow-write --watch ./mod.ts"
+    "start": "run --allow-all src/server.ts",
+    "dev": "run --allow-all --watch src/server.ts"
   }
 }

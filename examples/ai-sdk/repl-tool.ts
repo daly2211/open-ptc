@@ -1,7 +1,7 @@
 /**
  * REPL Tool Wrapper for Vercel AI SDK Agents
  *
- * Connects to the open-codemode WebSocket server to provide bidirectional
+ * Connects to the Open-PTC WebSocket server to provide bidirectional
  * tool calling. Local TypeScript/JavaScript functions are registered as tools
  * on the server, and executed code can call them back through the WebSocket
  * connection.
@@ -319,14 +319,12 @@ function fnToDescriptor(fn: ToolFunction): ClientToolDescriptor {
 export interface ReplToolOptions {
   /** WebSocket server URL. Default: "ws://localhost:9733" */
   wsUrl?: string;
-  /** Name for the AI SDK tool. Default: "code_executor" */
-  toolName?: string;
   /** Execution timeout in milliseconds. Default: 60_000 */
   timeout?: number;
 }
 
 /**
- * Create a Vercel AI SDK tool backed by the open-codemode WebSocket server.
+ * Create a Vercel AI SDK tool backed by the Open-PTC WebSocket server.
  *
  * Registers the provided functions as bidirectional tools on the server.
  * The server generates TypeScript signatures from the JSON schemas, which
@@ -359,7 +357,6 @@ export async function createReplTool(
 ) {
   const {
     wsUrl = "ws://localhost:9733",
-    toolName = "code_executor",
     timeout = 60_000,
   } = options;
 
@@ -376,7 +373,7 @@ export async function createReplTool(
     bridge.signatures,
     "\nUse `await` for all function calls.",
     "Use `console.log()` to produce output — only logged values appear in the result.",
-    "Example: `console.log(await get_temperature('NYC'))`",
+    "Example: `console.log(await main.get_temperature({ city: 'NYC' }))`",
   ].join("\n");
 
   const paramSchema = z.object({

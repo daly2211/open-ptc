@@ -123,6 +123,12 @@ code_tool = repl_tool(
 
 The wrapper auto-generates JSON Schemas from your Python type hints and docstrings. These schemas are sent to the WS server during registration, and the server uses its own signature generator to produce TypeScript declarations.
 
+For output schemas, the default behavior is:
+
+- infer `outputSchema` from the function return type hint
+
+For fixed-shape output payloads, use `TypedDict` return types so generated signatures include concrete fields.
+
 ```python
 def search(query: str, max_results: int = 10) -> list:
     """Search for items.
@@ -147,6 +153,24 @@ Generates this schema:
 ```
 
 Which the server turns into a TypeScript signature in the tool description.
+
+Example structured output:
+
+```python
+from typing import TypedDict
+
+class ConvertTempResponse(TypedDict):
+    response: float
+
+def convert_temp(fahrenheit: float, to_unit: str) -> ConvertTempResponse:
+    if to_unit == "celsius":
+        converted = round((fahrenheit - 32) * 5 / 9, 1)
+    elif to_unit == "kelvin":
+        converted = round((fahrenheit - 32) * 5 / 9 + 273.15, 1)
+    else:
+        converted = fahrenheit
+    return {"response": converted}
+```
 
 ## Best Practices
 

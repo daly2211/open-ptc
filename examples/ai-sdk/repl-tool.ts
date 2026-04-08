@@ -27,6 +27,7 @@ export interface ToolFunction {
   description: string;
   parameters: Record<string, ParameterDef>;
   returns?: string;
+  outputSchema?: object;
   handler: (...args: any[]) => any | Promise<any>;
 }
 
@@ -301,8 +302,10 @@ function fnToDescriptor(fn: ToolFunction): ClientToolDescriptor {
     inputSchema: { type: "object", properties, ...(required.length ? { required } : {}) },
   };
 
-  // Only add outputSchema if returns is defined and not "void" or "undefined"
-  if (fn.returns && fn.returns !== "void" && fn.returns !== "undefined") {
+  // Prefer explicit outputSchema; keep legacy inference for backward compatibility.
+  if (fn.outputSchema) {
+    descriptor.outputSchema = fn.outputSchema;
+  } else if (fn.returns && fn.returns !== "void" && fn.returns !== "undefined") {
     const outputType = TS_TYPE_TO_JSON[fn.returns] ?? fn.returns;
     if (outputType && outputType !== "void" && outputType !== "undefined") {
       descriptor.outputSchema = { type: outputType };
@@ -340,7 +343,7 @@ export interface ReplToolOptions {
  *     name: "get_weather",
  *     description: "Get the current weather for a city",
  *     parameters: { city: { type: "string", description: "City name" } },
- *     returns: "object",
+ *     outputSchema: { type: "object" },
  *     handler: ({ city }) => ({ temp: 72, condition: "sunny" }),
  *   },
  * ]);

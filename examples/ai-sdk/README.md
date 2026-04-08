@@ -22,7 +22,7 @@ LLM  ──>  code_executor tool  ──>  WS Server  ──>  Deno sandbox
 1. `createReplTool()` connects to the WS server, registers your functions (with JSON Schemas), and fetches the TypeScript signatures the server produces
 2. The signatures go into the tool description so the LLM knows the available API
 3. When the LLM writes code that calls a function, the server sends a `tool_call` back over the WebSocket
-4. The wrapper executes your function locally and returns the result
+4. The wrapper executes your function locally and sends back the result
 5. The agent loop (`stopWhen: stepCountIs(N)`) allows multi-step tool usage
 
 ## Quick Start
@@ -65,7 +65,7 @@ const codeExecutor = await createReplTool([
     parameters: {
       location: { type: "string", description: "City name" },
     },
-    returns: "object",
+    outputSchema: { type: "object" },
     handler: ({ location }) => ({ temp: 72, condition: "sunny" }),
   },
 ]);
@@ -100,7 +100,7 @@ const codeExecutor = await createReplTool(functions, {
 
 ## Defining Functions
 
-Functions are defined as plain objects with a `handler`:
+Functions are defined as plain objects with a `handler` and an `outputSchema`:
 
 ```typescript
 import { ToolFunction } from "./repl-tool.ts";
@@ -112,7 +112,7 @@ const myFunction: ToolFunction = {
     query: { type: "string", description: "Search query" },
     max_results: { type: "number", description: "Max results", default: 10 },
   },
-  returns: "array",
+  outputSchema: { type: "array" },
   handler: ({ query, max_results = 10 }) => {
     // Your implementation here
     return [{ title: "Result 1" }];

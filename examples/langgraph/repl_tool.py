@@ -97,7 +97,44 @@ def _python_type_to_json_schema(annotation: Any) -> dict:
 
     # typing.Dict[K, V]
     if origin is dict:
-        return {"type": "object"}
+        schema: dict[str, Any] = {"type": "object"}
+        if len(args) == 2:
+            # Dict key type is expected to be string in JSON objects; we use the
+            # value annotation to build additionalProperties typing.
+            value_schema = _python_type_to_json_schema(args[1])
+            if value_schema:
+                schema["additionalProperties"] = value_schema
+        return schema
+
+    # typing.TypedDict classes (or equivalent runtime shape)
+    if (
+        isinstance(annotation, type)
+        and hasattr(annotation, "__annotations__")
+        and hasattr(annotation, "__total__")
+    ):
+        properties: dict[str, Any] = {}
+        required: list[str] = []
+
+        annotations = getattr(annotation, "__annotations__", {})
+        required_keys = set(getattr(annotation, "__required_keys__", set()))
+        optional_keys = set(getattr(annotation, "__optional_keys__", set()))
+
+        for key, value_type in annotations.items():
+            prop_schema = _python_type_to_json_schema(value_type)
+            properties[key] = prop_schema if prop_schema else {}
+
+            if key in required_keys:
+                required.append(key)
+            elif not optional_keys and getattr(annotation, "__total__", True):
+                required.append(key)
+
+        schema = {
+            "type": "object",
+            "properties": properties,
+        }
+        if required:
+            schema["required"] = required
+        return schema
 
     # Plain type
     json_type = _PYTHON_TYPE_TO_JSON.get(annotation)
@@ -209,8 +246,9 @@ def _func_to_tool_descriptor(func: Callable) -> dict:
         "inputSchema": _func_to_json_schema(func),
     }
     
-    # Add output schema if return type hint is present
+    # Add output schema if return type hint is present.
     output_schema = _return_type_to_json_schema(func)
+
     if output_schema is not None:
         descriptor["outputSchema"] = output_schema
     
@@ -486,7 +524,7 @@ def create_repl_tool(
         f"{bridge.signatures}\n\n"
         "Use `await` for all function calls. "
         "Use `console.log()` to produce output — only logged values appear "
-        "in the result. Example: `console.log(await main.get_temperature('NYC'))`"
+        "in the result. Example: `console.log(await main.get_temperature({ city: 'NYC' }))`"
     )
 
     @tool(tool_name)
@@ -500,6 +538,7 @@ def create_repl_tool(
         return result
 
     execute_code.description = description
+    print(description)
     return execute_code
 
 

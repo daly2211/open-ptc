@@ -25,10 +25,10 @@ const WS_URL = process.env.WS_SERVER_URL ?? "ws://localhost:9733";
 // -- Model configuration -----------------------------------------------------
 
 function getModel() {
-  const baseURL   = process.env.BASE_URL   ?? "https://api.openai.com/v1";
-  const apiKey    = process.env.API_KEY    ?? process.env.OPENAI_API_KEY ?? "";
+  const baseURL = process.env.BASE_URL ?? "https://api.openai.com/v1";
+  const apiKey = process.env.API_KEY ?? process.env.OPENAI_API_KEY ?? "";
   const modelName = process.env.MODEL_NAME ?? "gpt-4o";
-  const modelApi  = (process.env.MODEL_API ?? "chat").toLowerCase();
+  const modelApi = (process.env.MODEL_API ?? "chat").toLowerCase();
 
   console.log(`Using model: ${modelName}`);
 
@@ -60,7 +60,7 @@ const functions: ToolFunction[] = [
     parameters: {
       city: { type: "string", description: "City name to look up" },
     },
-    returns: "number",
+    outputSchema: { type: "number" },
     handler: ({ city }: { city: string }) => {
       const temps: Record<string, number> = {
         NYC: 72.0,
@@ -81,7 +81,12 @@ const functions: ToolFunction[] = [
         enum: ["celsius", "kelvin"],
       },
     },
-    returns: "number",
+    outputSchema: {
+      type: "object",
+      properties: {
+        fahrenheit: { type: "number" },
+      },
+    },
     handler: ({
       fahrenheit,
       to_unit,
@@ -89,10 +94,16 @@ const functions: ToolFunction[] = [
       fahrenheit: number;
       to_unit: string;
     }) => {
-      if (to_unit === "celsius") return Math.round(((fahrenheit - 32) * 5) / 9 * 10) / 10;
-      if (to_unit === "kelvin")
-        return Math.round(((fahrenheit - 32) * 5 / 9 + 273.15) * 10) / 10;
-      return fahrenheit;
+      if (to_unit === "celsius") {
+        return Math.round(((fahrenheit - 32) * 5) / 9 * 10) / 10;
+      }
+      if (to_unit === "kelvin") {
+        return {
+          fahrenheit: Math.round(((fahrenheit - 32) * 5 / 9 + 273.15) * 10) /
+            10,
+        };
+      }
+      return { fahrenheit };
     },
   },
   {
@@ -107,7 +118,7 @@ const functions: ToolFunction[] = [
         enum: ["add", "subtract", "multiply", "divide"],
       },
     },
-    returns: "number",
+    outputSchema: { type: "number" },
     handler: ({
       a,
       b,
@@ -134,7 +145,7 @@ async function main() {
   console.log("Connecting to Open-PTC WS server...");
 
   const codeExecutor = await createReplTool(functions, { wsUrl: WS_URL });
-
+  console.log(codeExecutor.description);
   console.log("Connected & tools registered.\n");
 
   const model = getModel();
@@ -161,10 +172,14 @@ async function main() {
       }
       if (toolResults.length) {
         console.log("\n--- Tool Results ---");
-        console.log(JSON.stringify(toolResults.map(tr => ({
-          toolName: tr.toolName,
-          output: tr.output
-        })), null, 2));
+        console.log(JSON.stringify(
+          toolResults.map((tr) => ({
+            toolName: tr.toolName,
+            output: tr.output,
+          })),
+          null,
+          2,
+        ));
       }
     },
   });
@@ -178,8 +193,12 @@ async function main() {
 main().catch((err) => {
   console.error("\nError:", err instanceof Error ? err.message : String(err));
   console.error("\nMake sure:");
-  console.error("  1. The Open-PTC servers are running (deno run --allow-all src/server.ts)");
+  console.error(
+    "  1. The Open-PTC servers are running (deno run --allow-all src/server.ts)",
+  );
   console.error("  2. API_KEY or OPENAI_API_KEY is set in .env");
-  console.error("  3. MODEL_API is set to chat when using OpenAI-compatible proxy endpoints");
+  console.error(
+    "  3. MODEL_API is set to chat when using OpenAI-compatible proxy endpoints",
+  );
   process.exit(1);
 });

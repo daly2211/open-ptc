@@ -12,6 +12,7 @@ Prerequisites:
 """
 
 import os
+from typing import TypedDict
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
@@ -22,6 +23,10 @@ from repl_tool import repl_tool
 load_dotenv()
 
 WS_URL = os.getenv("WS_SERVER_URL", "ws://localhost:9733")
+
+
+class ConvertTempResponse(TypedDict):
+    response: float
 
 
 # -- Define plain Python functions (no @tool decorator) -----------------------
@@ -36,18 +41,22 @@ def get_temperature(city: str) -> float:
     return temps.get(city, 70.0)
 
 
-def convert_temp(fahrenheit: float, to_unit: str) -> float:
+def convert_temp(fahrenheit: float, to_unit: str) -> ConvertTempResponse:
     """Convert temperature from Fahrenheit to another unit.
 
     Args:
         fahrenheit: Temperature in Fahrenheit
         to_unit: Target unit — 'celsius' or 'kelvin'
+
+    Returns:
+        Converted temperature payload with a numeric `response` field.
     """
+    converted = fahrenheit
     if to_unit == "celsius":
-        return round((fahrenheit - 32) * 5 / 9, 1)
-    if to_unit == "kelvin":
-        return round((fahrenheit - 32) * 5 / 9 + 273.15, 1)
-    return fahrenheit
+        converted = round((fahrenheit - 32) * 5 / 9, 1)
+    elif to_unit == "kelvin":
+        converted = round((fahrenheit - 32) * 5 / 9 + 273.15, 1)
+    return {"response": converted}
 
 
 def calculate(a: float, b: float, operation: str) -> float:

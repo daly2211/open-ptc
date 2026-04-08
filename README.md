@@ -2,13 +2,13 @@
 
 ![Open-PTC](assets/images/Open-PTC.png)
 
-Most LLM agents struggle to scale when given access to dozens of tools. Sending huge tool schemas in every prompt burns context window tokens, and executing multi-step logic requires expensive, high-latency loops between the model and your application.
+Most LLM agents break down when you give them too many tools. Tool schemas fill up the context window, and multi-step tasks turn into slow loops between the model and your app.
 
-**Open-PTC** is a proxy and sandboxed runtime that solves this by enabling Programmatic Tool Calling. 
+**Open-PTC** is a proxy and sandboxed runtime built around Programmatic Tool Calling.
 
-Instead of stuffing every tool schema into the LLM's prompt, Open-PTC connects to your Model Context Protocol (MCP) servers and local functions, and exposes them all to the LLM via a single `code_executor` tool. The LLM writes a TypeScript snippet to orchestrate the tools, and Open-PTC executes that code securely in an isolated Deno sandbox.
+It lets the model write code to call tools instead of calling them step by step. Open-PTC connects to your Model Context Protocol (MCP) servers and local functions, exposes everything through a single `code_executor`, and runs the generated TypeScript in a secure Deno isolate.
 
-This structure allows models to execute complex, multi-step tool logic (loops, conditionals, data reshaping) in a single backend generation step, preventing the context window exhaustion and latency spikes typical of naive tool-calling loops.
+This allows the model to handle complex, multi-step logic like loops, conditionals, and data reshaping in a single generation, avoiding the token bloat and latency of traditional tool-calling loops.
 
 ## Why Open-PTC
 

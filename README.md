@@ -1,5 +1,12 @@
 # Open-PTC
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Runtime: Deno](https://img.shields.io/badge/runtime-deno-black?logo=deno&logoColor=white)](https://deno.com/)
+[![Protocol: MCP](https://img.shields.io/badge/protocol-MCP-2f6f9f.svg)](https://modelcontextprotocol.io/)
+[![API: OpenAI Compatible](https://img.shields.io/badge/api-OpenAI%20compatible-0ea5e9.svg)](https://platform.openai.com/docs/api-reference/responses)
+
+[Run Open-PTC](#run-open-ptc) | [Integration Modes](#integration-modes) | [MCP Configuration](#mcp-configuration) | [Proxy Client Guide](examples/proxy/README.md) | [Future Improvements](#future-improvements)
+
 ![Open-PTC](assets/images/Open-PTC.png)
 
 Most LLM agents break down when you give them too many tools. Tool schemas fill up the context window, and multi-step tasks turn into slow loops between the model and your app.

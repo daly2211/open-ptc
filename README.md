@@ -32,8 +32,6 @@ Open-PTC applies these ideas in an open runtime:
 - Consolidate multiple tool schemas into a single `code_executor` tool, saving massive amounts of context window space.
 - Give the model access to hundreds of tools through a unified, programmatic interface instead of stuffing every schema into the prompt.
 
-Source style reference: Anthropic Engineering blog, "Introducing advanced tool use on the Claude Developer Platform".
-
 ## How It Works
 
 Open-PTC runs up to four services simultaneously from a unified entrypoint (`src/server.ts`). Each service plays a specific role in the ecosystem:

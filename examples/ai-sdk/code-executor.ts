@@ -1,5 +1,5 @@
 /**
- * REPL Tool Wrapper for Vercel AI SDK Agents
+ * Code Executor Wrapper for Vercel AI SDK Agents
  *
  * Connects to the Open-PTC WebSocket server to provide bidirectional
  * tool calling. Local TypeScript/JavaScript functions are registered as tools
@@ -9,7 +9,7 @@
  * The server generates TypeScript signatures from the JSON schemas, which
  * are included in the tool description so the LLM knows how to call them.
  *
- * This is the TypeScript equivalent of the Python `repl_tool.py` used
+ * This is the TypeScript equivalent of the Python `code_executor.py` used
  * in the LangGraph example.
  */
 
@@ -319,7 +319,7 @@ function fnToDescriptor(fn: ToolFunction): ClientToolDescriptor {
 // Public API
 // ---------------------------------------------------------------------------
 
-export interface ReplToolOptions {
+export interface CodeExecutorOptions {
   /** WebSocket server URL. Default: "ws://localhost:9733" */
   wsUrl?: string;
   /** Execution timeout in milliseconds. Default: 60_000 */
@@ -338,7 +338,7 @@ export interface ReplToolOptions {
  *
  * @example
  * ```ts
- * const executor = await createReplTool([
+ * const executor = await createCodeExecutor([
  *   {
  *     name: "get_weather",
  *     description: "Get the current weather for a city",
@@ -354,9 +354,9 @@ export interface ReplToolOptions {
  * });
  * ```
  */
-export async function createReplTool(
+export async function createCodeExecutor(
   functions: ToolFunction[],
-  options: ReplToolOptions = {},
+  options: CodeExecutorOptions = {},
 ) {
   const {
     wsUrl = "ws://localhost:9733",
@@ -393,6 +393,6 @@ export async function createReplTool(
 }
 
 /**
- * Shorthand for createReplTool.
+ * Shorthand for createCodeExecutor.
  */
-export const replTool = createReplTool;
+export const codeExecutor = createCodeExecutor;

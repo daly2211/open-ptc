@@ -18,7 +18,7 @@
 import "dotenv/config";
 import { generateText, stepCountIs } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { createReplTool, type ToolFunction } from "./repl-tool.ts";
+import { createCodeExecutor, type ToolFunction } from "./code-executor.ts";
 
 const WS_URL = process.env.WS_SERVER_URL ?? "ws://localhost:9733";
 
@@ -84,7 +84,7 @@ const functions: ToolFunction[] = [
     outputSchema: {
       type: "object",
       properties: {
-        fahrenheit: { type: "number" },
+        output: { type: "number" },
       },
     },
     handler: ({
@@ -95,15 +95,15 @@ const functions: ToolFunction[] = [
       to_unit: string;
     }) => {
       if (to_unit === "celsius") {
-        return Math.round(((fahrenheit - 32) * 5) / 9 * 10) / 10;
+        return { output: Math.round(((fahrenheit - 32) * 5) / 9 * 10) / 10 };
       }
       if (to_unit === "kelvin") {
         return {
-          fahrenheit: Math.round(((fahrenheit - 32) * 5 / 9 + 273.15) * 10) /
+          output: Math.round(((fahrenheit - 32) * 5 / 9 + 273.15) * 10) /
             10,
         };
       }
-      return { fahrenheit };
+      return { output: fahrenheit };
     },
   },
   {
@@ -144,7 +144,7 @@ const functions: ToolFunction[] = [
 async function main() {
   console.log("Connecting to Open-PTC WS server...");
 
-  const codeExecutor = await createReplTool(functions, { wsUrl: WS_URL });
+  const codeExecutor = await createCodeExecutor(functions, { wsUrl: WS_URL });
   console.log(codeExecutor.description);
   console.log("Connected & tools registered.\n");
 

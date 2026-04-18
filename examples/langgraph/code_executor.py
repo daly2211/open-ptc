@@ -1,5 +1,5 @@
 """
-REPL Tool Wrapper for LangGraph Agents
+Code Executor Wrapper for LangGraph Agents
 
 Connects to the Open-PTC WebSocket server to provide bidirectional
 tool calling. Python functions are registered as tools on the server,
@@ -19,11 +19,11 @@ from typing import Callable, Any
 import websocket
 from langchain_core.tools import tool
 
-log = logging.getLogger("repl_tool")
+log = logging.getLogger("code_executor")
 
 
 def configure_logging(level: int | str = logging.WARNING) -> None:
-    """Configure repl_tool log level.
+    """Configure code_executor log level.
 
     Args:
         level: logging.DEBUG, logging.INFO, logging.WARNING, etc.
@@ -31,7 +31,7 @@ def configure_logging(level: int | str = logging.WARNING) -> None:
     """
     if isinstance(level, str):
         level = getattr(logging, level.upper(), logging.WARNING)
-    logger = logging.getLogger("repl_tool")
+    logger = logging.getLogger("code_executor")
     logger.setLevel(level)
     if not logger.handlers:
         handler = logging.StreamHandler()
@@ -475,7 +475,7 @@ class _WsBridge:
 
 # -- Public API ---------------------------------------------------------------
 
-def create_repl_tool(
+def create_code_executor(
     functions: list[Callable],
     ws_url: str = "ws://localhost:9733",
     tool_name: str = "code_executor",
@@ -506,7 +506,7 @@ def create_repl_tool(
             return {"temp": 72, "condition": "sunny"}
 
         agent = create_agent(model, tools=[
-            create_repl_tool([get_weather], ws_url="ws://localhost:9733")
+            create_code_executor([get_weather], ws_url="ws://localhost:9733")
         ])
     """
     if not functions:
@@ -542,17 +542,17 @@ def create_repl_tool(
     return execute_code
 
 
-def repl_tool(
+def code_executor(
     functions: list[Callable],
     ws_url: str = "ws://localhost:9733",
     **kwargs: Any,
 ) -> Any:
     """
-    Shorthand for create_repl_tool.
+    Shorthand for create_code_executor.
 
     Args:
         functions: Python functions to expose
         ws_url:    WebSocket server URL
-        **kwargs:  Forwarded to create_repl_tool
+        **kwargs:  Forwarded to create_code_executor
     """
-    return create_repl_tool(functions, ws_url=ws_url, **kwargs)
+    return create_code_executor(functions, ws_url=ws_url, **kwargs)

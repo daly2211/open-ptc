@@ -19,7 +19,7 @@ LLM  ──>  code_executor tool  ──>  WS Server  ──>  Deno sandbox
                                                       continues
 ```
 
-1. `createReplTool()` connects to the WS server, registers your functions (with JSON Schemas), and fetches the TypeScript signatures the server produces
+1. `createCodeExecutor()` connects to the WS server, registers your functions (with JSON Schemas), and fetches the TypeScript signatures the server produces
 2. The signatures go into the tool description so the LLM knows the available API
 3. When the LLM writes code that calls a function, the server sends a `tool_call` back over the WebSocket
 4. The wrapper executes your function locally and sends back the result
@@ -55,10 +55,10 @@ npx tsx example.ts
 ```typescript
 import { generateText, stepCountIs } from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
-import { createReplTool } from "./repl-tool.ts";
+import { createCodeExecutor } from "./code-executor.ts";
 
 // Define regular functions to expose in the sandbox
-const codeExecutor = await createReplTool([
+const codeExecutor = await createCodeExecutor([
   {
     name: "get_weather",
     description: "Get weather for a location",
@@ -89,7 +89,7 @@ const { text } = await generateText({
 ### Configuration
 
 ```typescript
-const codeExecutor = await createReplTool(functions, {
+const codeExecutor = await createCodeExecutor(functions, {
   wsUrl: "ws://custom-host:9733",  // WebSocket server URL
   timeout: 120_000,                // Execution timeout (ms)
 });
@@ -103,7 +103,7 @@ const codeExecutor = await createReplTool(functions, {
 Functions are defined as plain objects with a `handler` and an `outputSchema`:
 
 ```typescript
-import { ToolFunction } from "./repl-tool.ts";
+import { ToolFunction } from "./code-executor.ts";
 
 const myFunction: ToolFunction = {
   name: "search",

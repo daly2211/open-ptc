@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Vercel AI SDK agent with open-codemode REPL tool",
+  "description": "Vercel AI SDK agent with open-codemode code executor tool",
   "scripts": {
     "start": "tsx example.ts",
     "dev": "tsx --watch example.ts"

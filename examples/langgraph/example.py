@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
 
-from repl_tool import repl_tool
+from code_executor import code_executor
 
 load_dotenv()
 
@@ -29,7 +29,7 @@ class ConvertTempResponse(TypedDict):
     response: float
 
 
-# -- Define plain Python functions (no @tool decorator) -----------------------
+# -- Define plain Python tools -----------------------
 
 def get_temperature(city: str) -> float:
     """Get the current temperature for a city in Fahrenheit.
@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     agent = create_agent(
         model,
-        tools=[repl_tool([get_temperature, convert_temp, calculate], ws_url=WS_URL)],
+        tools=[code_executor([get_temperature, convert_temp, calculate], ws_url=WS_URL)],
         debug=True
     )
 

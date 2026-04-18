@@ -5,7 +5,7 @@ Provides bidirectional tool calling between LangGraph agents
 and the Open-PTC WebSocket execution environment.
 """
 
-from .repl_tool import repl_tool, create_repl_tool
+from .code_executor import code_executor, create_code_executor
 
-__all__ = ["repl_tool", "create_repl_tool"]
+__all__ = ["code_executor", "create_code_executor"]
 __version__ = "1.0.0"

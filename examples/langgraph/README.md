@@ -17,7 +17,7 @@ LLM  ──>  code_executor tool  ──>  WS Server  ──>  Deno sandbox
                                                       continues
 ```
 
-1. `repl_tool()` connects to the WS server, registers your functions (with auto-generated JSON Schemas), and fetches the TypeScript signatures the server produces
+1. `code_executor()` connects to the WS server, registers your functions (with auto-generated JSON Schemas), and fetches the TypeScript signatures the server produces
 2. The signatures go into the tool description so the LLM knows the available API
 3. When the LLM writes code that calls a function, the server sends a `tool_call` back over the WebSocket
 4. The wrapper executes the Python function locally and returns the result
@@ -44,7 +44,7 @@ python example.py
 ```python
 from langchain.agents import create_agent
 from langchain.chat_models import init_chat_model
-from repl_tool import repl_tool
+from code_executor import code_executor
 
 # Define regular Python functions (NOT @tool decorated)
 def get_weather(location: str) -> dict:
@@ -69,7 +69,7 @@ def calculate(a: float, b: float, operation: str) -> float:
 # Create agent
 model = init_chat_model(model="gpt-4", model_provider="openai", temperature=0)
 agent = create_agent(model, tools=[
-    repl_tool([get_weather, calculate], ws_url="ws://localhost:9733")
+    code_executor([get_weather, calculate], ws_url="ws://localhost:9733")
 ])
 
 result = agent.invoke({"messages": [("user", "Weather in Paris?")]})
@@ -77,9 +77,9 @@ result = agent.invoke({"messages": [("user", "Weather in Paris?")]})
 
 ### Important: Use Regular Functions
 
-The `repl_tool` expects regular Python functions, **not** LangGraph tools. If you have functions already decorated with `@tool`, you have two options:
+The `code_executor` expects regular Python functions, **not** LangGraph tools. If you have functions already decorated with `@tool`, you have two options:
 
-**Option 1: Don't decorate them** (Recommended for repl_tool use)
+**Option 1: Don't decorate them** (Recommended for code_executor use)
 ```python
 # Just define regular functions
 def my_function(x: int) -> int:
@@ -87,7 +87,7 @@ def my_function(x: int) -> int:
     return x * 2
 
 # Use directly
-code_tool = repl_tool([my_function])
+code_tool = code_executor([my_function])
 ```
 
 **Option 2: Use `.__wrapped__` to access the underlying function**
@@ -100,7 +100,7 @@ def my_function(x: int) -> int:
     return x * 2
 
 # Access the underlying function with .__wrapped__
-code_tool = repl_tool([my_function.__wrapped__])
+code_tool = code_executor([my_function.__wrapped__])
 
 # You can also use my_function as a standalone LangGraph tool
 agent = create_agent(model, tools=[my_function, code_tool])
@@ -111,7 +111,7 @@ The second option is useful if you want to use the same functions both as standa
 ### Configuration
 
 ```python
-code_tool = repl_tool(
+code_tool = code_executor(
     functions=[func1, func2],
     ws_url="ws://custom-host:9733",  # WebSocket server URL
     tool_name="my_executor",         # Custom tool name
@@ -183,6 +183,6 @@ def convert_temp(fahrenheit: float, to_unit: str) -> ConvertTempResponse:
 
 | File | Purpose |
 |------|---------|
-| `repl_tool.py` | Core wrapper: validation, schema gen, WS bridge, LangGraph tool |
+| `code_executor.py` | Core wrapper: validation, schema gen, WS bridge, LangGraph tool |
 | `example.py` | Working example with temperature + math functions |
 | `requirements.txt` | Python dependencies |
